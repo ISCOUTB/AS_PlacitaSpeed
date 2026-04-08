@@ -9,7 +9,7 @@ Color _withOpacity(Color color, double opacity) {
 /// Widget del formulario de login
 /// Componente de presentación que contiene los campos de entrada
 class LoginFormWidget extends StatefulWidget {
-  final VoidCallback onLoginPressed;
+  final Function(BuildContext) onLoginPressed;
   final void Function(String email, String password) onCredentialsChanged;
 
   const LoginFormWidget({
@@ -52,7 +52,7 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
         setState(() => _isLoading = false);
-        widget.onLoginPressed();
+        widget.onLoginPressed(context);
       }
     });
   }
@@ -205,36 +205,8 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                       ),
               ),
             ),
-            const SizedBox(height: 16),
-            // Link de registro
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '¿No tienes cuenta? ',
-                  style: TextStyle(
-                    color: _withOpacity(AppTheme.white, 0.8),
-                    fontSize: 14,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: !_isLoading
-                      ? () {
-                          // Navegación a pantalla de registro será implementada con routing
-                        }
-                      : null,
-                  child: Text(
-                    'Registrarse',
-                    style: TextStyle(
-                      color: AppTheme.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            // Nota: El registro no está disponible. Solo usuarios con correo institucional
+            // de la Universidad Tecnológica de Bolívar pueden acceder a la aplicación.
           ],
         ),
       ),

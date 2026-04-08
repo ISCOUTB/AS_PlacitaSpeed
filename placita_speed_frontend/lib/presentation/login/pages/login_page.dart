@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:placita_speed_frontend/presentation/home/pages/home_page.dart';
 import 'package:placita_speed_frontend/presentation/login/widgets/logo_widget.dart';
 import 'package:placita_speed_frontend/presentation/login/widgets/login_form.dart';
 import 'package:placita_speed_frontend/presentation/theme/app_theme.dart';
@@ -13,21 +14,15 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  String _email = '';
-
   void _onCredentialsChanged(String email, String password) {
-    setState(() {
-      _email = email;
-      // Validación adicional con la contraseña será implementada con state management
-    });
+    // Validación adicional con la contraseña será implementada con state management
   }
 
-  void _onLoginPressed() {
-    // Autenticación real será implementada mediante casos de uso y state management
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Intento de login con: $_email'),
-        duration: const Duration(seconds: 2),
+  void _onLoginPressed(BuildContext context) {
+    // Validación exitosa - Navegar a HomePage
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const HomePage(),
       ),
     );
   }
