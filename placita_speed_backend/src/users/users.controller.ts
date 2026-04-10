@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/user.dto';
 import { User } from './user.entity';
@@ -10,6 +10,11 @@ export class UsersController {
   @Get()
   async findAll() {
     return this.usersService.findAll();
+  }
+
+  @Get(':email')
+  async updateLastAccess(@Param('email') email: string) {
+    return this.usersService.updateLastAccess(email);
   }
 
   @Post()

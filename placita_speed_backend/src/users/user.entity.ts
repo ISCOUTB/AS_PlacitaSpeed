@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, PrimaryColumn } from "typeorm";
 
 export enum UserRole {
     ADMIN = 'ADMIN',
@@ -7,10 +7,7 @@ export enum UserRole {
 
 @Entity()
 export class User {
-    @PrimaryGeneratedColumn()
-    id: number
-    
-    @Column({ unique: true })
+    @PrimaryColumn({type: 'varchar', length: 254})
     email: string
 
     @Column({type: 'enum', enum: UserRole, default: UserRole.USER})
