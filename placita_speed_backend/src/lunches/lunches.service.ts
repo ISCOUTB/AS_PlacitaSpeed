@@ -14,7 +14,7 @@ export class LunchesService {
         return this.lunchesRepository.find();
     }
 
-    async getLunch(lunch_id: number): Promise<Lunch|null> {
-        return this.lunchesRepository.findOne({ where: { lunch_id } });
+    async getLunch(id: number): Promise<Lunch|null> {
+        return this.lunchesRepository.findOne({ where: { id } });
     }
 }

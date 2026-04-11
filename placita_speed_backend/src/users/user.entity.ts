@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryColumn } from "typeorm";
+import { Ticket } from "src/tickets/ticket.entity";
+import { Entity, Column, PrimaryColumn, OneToMany } from "typeorm";
 
 export enum UserRole {
     ADMIN = 'ADMIN',
@@ -21,4 +22,7 @@ export class User {
 
     @Column({type: 'timestamp', default: () => 'CURRENT_TIMESTAMP'})
     last_access: Date
+
+    @OneToMany(()=> Ticket, ticket => ticket.user)
+    tickets: Ticket[]
 }
