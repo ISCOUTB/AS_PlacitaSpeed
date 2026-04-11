@@ -22,9 +22,9 @@ export class Ticket{
     @Column({type: 'timestamp', nullable: true})
     used_at: Date;
 
-    @ManyToOne(() => User, user => user.tickets)
+    @ManyToOne(() => User, user => user.tickets, {nullable: false})
     user: User
 
-    @ManyToOne(() => Lunch, lunch => lunch.tickets)
+    @ManyToOne(() => Lunch, lunch => lunch.tickets, {nullable: false})
     lunch: Lunch
 }

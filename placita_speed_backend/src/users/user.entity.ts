@@ -1,5 +1,6 @@
-import { Ticket } from "src/tickets/ticket.entity";
 import { Entity, Column, PrimaryColumn, OneToMany } from "typeorm";
+import { Recharge } from "src/recharges/recharge.entity";
+import { Ticket } from "src/tickets/ticket.entity";
 
 export enum UserRole {
     ADMIN = 'ADMIN',
@@ -15,7 +16,7 @@ export class User {
     role: UserRole
 
     @Column({type: 'decimal', precision: 10, scale: 2, default: 0})
-    saldo_virtual: number
+    virtual_balance: number
 
     @Column({type: 'timestamp', default: () => 'CURRENT_TIMESTAMP'})
     created_at: Date
@@ -25,4 +26,7 @@ export class User {
 
     @OneToMany(()=> Ticket, ticket => ticket.user)
     tickets: Ticket[]
+
+    @OneToMany(() => Recharge, recharge => recharge.user)
+    recharges: Recharge[]
 }

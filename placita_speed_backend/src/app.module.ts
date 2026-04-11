@@ -17,6 +17,11 @@ import { TicketsController } from './tickets/tickets.controller';
 import { TicketsService } from './tickets/tickets.service';
 import { Ticket } from './tickets/ticket.entity';
 
+import { RechargesModule } from './recharges/recharges.module';
+import { RechargesController } from './recharges/recharges.controller';
+import { RechargesService } from './recharges/recharges.service';
+import { Recharge } from './recharges/recharge.entity';
+
 @Module({
   imports: [
     UsersModule,
@@ -27,14 +32,15 @@ import { Ticket } from './tickets/ticket.entity';
       username: 'postgres',
       password: '1234',
       database: 'placita_speed_db',
-      entities: [User, Lunch, Ticket],
+      entities: [User, Lunch, Ticket, Recharge],
       synchronize: true // solo para desarrollo, no usar en producción
     }),
     LunchesModule,
-    TicketsModule
+    TicketsModule,
+    RechargesModule
   ],
-  controllers: [UsersController, LunchesController, TicketsController],
-  providers: [UsersService, LunchesService, TicketsService],
+  controllers: [UsersController, LunchesController, TicketsController, RechargesController],
+  providers: [UsersService, LunchesService, TicketsService, RechargesService],
 })
 export class AppModule {
   constructor(private dataSource: DataSource) {}
