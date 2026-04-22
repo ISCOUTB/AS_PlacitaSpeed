@@ -1,47 +1,54 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { AppDataSource } from './infrastructure/database/typeorm/config/data-source';
 
-import { UsersController } from './users/users.controller';
-import { UsersService } from './users/users.service';
-import { UsersModule } from './users/users.module';
-import { User } from './users/user.entity';
+import { LunchDomainService } from './domain/lunch/lunch-domain.service';
+import { LunchTypeormService } from './infrastructure/database/typeorm/lunch-typeorm.repository';
+import { LunchController } from './presentation/lunch/lunch.controller';
+import { LunchApplicationService } from './application/lunch/lunch-application.service';
 
-import { LunchesController } from './lunches/lunches.controller';
-import { LunchesService } from './lunches/lunches.service';
-import { LunchesModule } from './lunches/lunches.module';
-import { Lunch } from './lunches/lunch.entity';
+import { UserDomainService } from './domain/user/user-domain.service';
+import { CreateUserService } from './application/user/create-user.use-case';
+import { UserTypeormService } from './infrastructure/database/typeorm/user-typeorm.repository';
+import { UserController } from './presentation/user/user.controller';
+import { UserApplicationService } from './application/user/user-application.service';
 
-import { TicketsModule } from './tickets/tickets.module';
-import { TicketsController } from './tickets/tickets.controller';
-import { TicketsService } from './tickets/tickets.service';
-import { Ticket } from './tickets/ticket.entity';
+import { TicketDomainService } from './domain/ticket/ticket-domain.service';
+import { CreateTicketService } from './application/ticket/create-ticket.use-case';
+import { TicketApplicationService } from './application/ticket/ticket-application.service';
+import { TicketTypeormService } from './infrastructure/database/typeorm/ticket-typeorm.repository';
+import { TicketController } from './presentation/ticket/ticket.controller';
 
-import { RechargesModule } from './recharges/recharges.module';
-import { RechargesController } from './recharges/recharges.controller';
-import { RechargesService } from './recharges/recharges.service';
-import { Recharge } from './recharges/recharge.entity';
+import { RechargeDomainService } from './domain/recharge/recharge-domain.service';
+import { CreateRechargeService } from './application/recharge/create-recharge.use-case';
+import { RechargeApplicationService } from './application/recharge/recharge-application.service';
+import { RechargeTypeormService } from './infrastructure/database/typeorm/recharge-typeorm.repository';
+import { RechargeController } from './presentation/recharge/recharge.controller';
 
 @Module({
   imports: [
-    UsersModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: '1234',
-      database: 'placita_speed_db',
-      entities: [User, Lunch, Ticket, Recharge],
-      synchronize: true // solo para desarrollo, no usar en producción
-    }),
-    LunchesModule,
-    TicketsModule,
-    RechargesModule
+    TypeOrmModule.forRoot(AppDataSource.options),
   ],
-  controllers: [UsersController, LunchesController, TicketsController, RechargesController],
-  providers: [UsersService, LunchesService, TicketsService, RechargesService],
+  controllers: [
+    LunchController,
+    UserController,
+    TicketController,
+    RechargeController],
+  providers: [
+    LunchDomainService,
+    LunchTypeormService,
+    LunchApplicationService,
+    UserDomainService,
+    CreateUserService,
+    UserTypeormService,
+    UserApplicationService,
+    TicketDomainService,
+    CreateTicketService,
+    TicketApplicationService,
+    TicketTypeormService,
+    RechargeDomainService,
+    CreateRechargeService,
+    RechargeApplicationService,
+    RechargeTypeormService],
 })
-export class AppModule {
-  constructor(private dataSource: DataSource) {}
-}
+export class AppModule {}
