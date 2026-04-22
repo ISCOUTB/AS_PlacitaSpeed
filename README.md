@@ -1,19 +1,19 @@
-# Placita Speed 🚀
+# Placita Speed 
 
 Aplicación móvil y web para optimizar la compra y entrega de almuerzos en la cafetería de la Universidad Tecnológica de Bolívar.
 
-## 🎯 Objetivo
+##  Objetivo
 
 Reducir filas y tiempos de espera mediante la compra digital de almuerzos y generación de tickets con código QR.
 
-## 🛠 Tecnologías
+##  Tecnologías
 
 - Flutter (Mobile + Web)
 - NestJS (Backend)
 - PostgreSQL / MySQL
 - QR Code
 
-## 👥 Integrantes
+##  Integrantes
 
 - Fabian Granados
 - Thomas Quintana
@@ -21,7 +21,7 @@ Reducir filas y tiempos de espera mediante la compra digital de almuerzos y gene
 - Dylan Ecker
 - Moises Marin
 
-## ⚙️ Instalación
+##  Instalación
 
 ### Backend
 ```bash
