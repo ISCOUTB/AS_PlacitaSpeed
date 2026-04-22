@@ -1,32 +1,19 @@
-import { Entity, Column, PrimaryColumn, OneToMany } from "typeorm";
-import { Recharge } from "src/recharges/recharge.entity";
-import { Ticket } from "src/tickets/ticket.entity";
-
-export enum UserRole {
-    ADMIN = 'ADMIN',
-    USER = 'USER'
-}
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity()
 export class User {
-    @PrimaryColumn({type: 'varchar', length: 254})
-    email: string
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column({type: 'enum', enum: UserRole, default: UserRole.USER})
-    role: UserRole
+  @Column()
+  nombre: string;
 
-    @Column({type: 'decimal', precision: 10, scale: 2, default: 0})
-    virtual_balance: number
+  @Column({ unique: true })
+  email: string;
 
-    @Column({type: 'timestamp', default: () => 'CURRENT_TIMESTAMP'})
-    created_at: Date
+  @Column()
+  password: string;
 
-    @Column({type: 'timestamp', default: () => 'CURRENT_TIMESTAMP'})
-    last_access: Date
-
-    @OneToMany(()=> Ticket, ticket => ticket.user)
-    tickets: Ticket[]
-
-    @OneToMany(() => Recharge, recharge => recharge.user)
-    recharges: Recharge[]
+  @Column({ default: 'student' })
+  role: string;
 }
