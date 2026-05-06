@@ -1,9 +1,9 @@
-import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { TicketEntity } from './ticket.entity';
 
 @Entity('lunch')
 export class LunchEntity {
-  @PrimaryColumn({ type: 'int' })
+  @PrimaryGeneratedColumn({ type: 'int' })
   id!: number;
 
   @Column({ type: 'varchar', length: 255 })
