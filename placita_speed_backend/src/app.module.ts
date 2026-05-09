@@ -25,15 +25,25 @@ import { RechargeApplicationService } from './application/recharge/recharge-appl
 import { RechargeTypeormRepository } from './infrastructure/database/typeorm/recharge-typeorm.repository';
 import { RechargeController } from './presentation/recharge/recharge.controller';
 
+import { LunchModule } from './presentation/lunch/lunch.module';
+import { RechargeModule } from './presentation/recharge/recharge.module';
+import { TicketModule } from './presentation/ticket/ticket.module';
+import { UserModule } from './presentation/user/user.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot(AppDataSource.options),
+    LunchModule,
+    RechargeModule,
+    TicketModule,
+    UserModule
   ],
   controllers: [
     LunchController,
-    UserController,
     TicketController,
-    RechargeController],
+    RechargeController,
+    UserController
+  ],
   providers: [
     LunchDomainService,
     LunchTypeormRepository,
@@ -49,6 +59,7 @@ import { RechargeController } from './presentation/recharge/recharge.controller'
     RechargeDomainService,
     CreateRechargeService,
     RechargeApplicationService,
-    RechargeTypeormRepository],
+    RechargeTypeormRepository
+  ],
 })
 export class AppModule {}
