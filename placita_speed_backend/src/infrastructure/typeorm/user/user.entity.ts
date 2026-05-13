@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryColumn, OneToMany } from "typeorm";
-import { RechargeEntity } from "./recharge.entity";
-import { TicketEntity } from "./ticket.entity";
+import { RechargeEntity } from "../recharge/recharge.entity";
+import { TicketEntity } from "../ticket/ticket.entity";
 
 export enum UserRole {
     ADMIN = 'ADMIN',

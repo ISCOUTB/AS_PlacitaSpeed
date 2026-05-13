@@ -1,4 +1,4 @@
-import { Recharge } from '../recharge';
+import { Recharge } from './recharge';
 
 export interface RechargeRepositoryPort {
     findById(id: string): Promise<Recharge | null>;

@@ -1,4 +1,4 @@
-import { Lunch } from '../lunch';
+import { Lunch } from './lunch';
 
 /**
  * Puerto de repositorio para Lunch

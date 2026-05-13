@@ -1,4 +1,4 @@
-import { Ticket } from '../ticket';
+import { Ticket } from './ticket';
 
 export interface TicketRepositoryPort {
     findById(id: string): Promise<Ticket | null>;

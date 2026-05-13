@@ -1,34 +1,23 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppDataSource } from './infrastructure/database/typeorm/config/data-source';
-
-import { LunchDomainService } from './domain/lunch/lunch-domain.service';
-import { LunchTypeormRepository } from './infrastructure/database/typeorm/lunch-typeorm.repository';
-import { LunchController } from './presentation/lunch/lunch.controller';
-import { LunchApplicationService } from './application/lunch/lunch-application.service';
-
-import { UserDomainService } from './domain/user/user-domain.service';
-import { CreateUserService } from './application/user/create-user.use-case';
-import { UserTypeormRepository } from './infrastructure/database/typeorm/user-typeorm.repository';
-import { UserController } from './presentation/user/user.controller';
-import { UserApplicationService } from './application/user/user-application.service';
-
-import { TicketDomainService } from './domain/ticket/ticket-domain.service';
-import { CreateTicketService } from './application/ticket/create-ticket.use-case';
-import { TicketApplicationService } from './application/ticket/ticket-application.service';
-import { TicketTypeormRepository } from './infrastructure/database/typeorm/ticket-typeorm.repository';
-import { TicketController } from './presentation/ticket/ticket.controller';
-
-import { RechargeDomainService } from './domain/recharge/recharge-domain.service';
-import { CreateRechargeService } from './application/recharge/create-recharge.use-case';
-import { RechargeApplicationService } from './application/recharge/recharge-application.service';
-import { RechargeTypeormRepository } from './infrastructure/database/typeorm/recharge-typeorm.repository';
-import { RechargeController } from './presentation/recharge/recharge.controller';
+import { AppDataSource } from './infrastructure/typeorm/data-source';
 
 import { LunchModule } from './presentation/lunch/lunch.module';
-import { RechargeModule } from './presentation/recharge/recharge.module';
-import { TicketModule } from './presentation/ticket/ticket.module';
+import { LunchTypeormRepository } from './infrastructure/typeorm/lunch/lunch-typeorm.repository';
+import { LunchController } from './presentation/lunch/lunch.controller';
+
 import { UserModule } from './presentation/user/user.module';
+import { UserTypeormRepository } from './infrastructure/typeorm/user/user-typeorm.repository';
+import { UserController } from './presentation/user/user.controller';
+
+import { TicketModule } from './presentation/ticket/ticket.module';
+import { TicketTypeormRepository } from './infrastructure/typeorm/ticket/ticket-typeorm.repository';
+import { TicketController } from './presentation/ticket/ticket.controller';
+
+import { RechargeModule } from './presentation/recharge/recharge.module';
+import { RechargeTypeormRepository } from './infrastructure/typeorm/recharge/recharge-typeorm.repository';
+import { RechargeController } from './presentation/recharge/recharge.controller';
+
 
 @Module({
   imports: [
@@ -45,20 +34,9 @@ import { UserModule } from './presentation/user/user.module';
     UserController
   ],
   providers: [
-    LunchDomainService,
     LunchTypeormRepository,
-    LunchApplicationService,
-    UserDomainService,
-    CreateUserService,
     UserTypeormRepository,
-    UserApplicationService,
-    TicketDomainService,
-    CreateTicketService,
-    TicketApplicationService,
     TicketTypeormRepository,
-    RechargeDomainService,
-    CreateRechargeService,
-    RechargeApplicationService,
     RechargeTypeormRepository
   ],
 })

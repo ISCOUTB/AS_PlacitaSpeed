@@ -2,16 +2,16 @@ import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 
 import { User } from '@domain/user/user';
-import { UserEntity } from './entities/user.entity';
-import { UserRepositoryPort } from '@domain/user/ports/user-repository.port';
+import { UserEntity } from '../user/user.entity';
+import { UserRepositoryPort } from '@domain/user/user-repository.port';
 
 import { Ticket } from '@domain/ticket/ticket';
-import { TicketEntity } from './entities/ticket.entity';
-import { TicketTypeormRepository } from './ticket-typeorm.repository';
+import { TicketEntity } from '../ticket/ticket.entity';
+import { TicketTypeormRepository } from '../ticket/ticket-typeorm.repository';
 
 import { Recharge } from '@domain/recharge/recharge';
-import { RechargeEntity } from './entities/recharge.entity';
-import { RechargeTypeormRepository } from './recharge-typeorm.repository';
+import { RechargeEntity } from '../recharge/recharge.entity';
+import { RechargeTypeormRepository } from '../recharge/recharge-typeorm.repository';
 
 // TODO: Quitar el forwardRef y mejorar la inyección de dependencias para evitar acoplamientos circulares
 

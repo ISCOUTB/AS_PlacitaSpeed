@@ -1,5 +1,5 @@
 import { Entity, Column, OneToMany, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
-import { UserEntity } from "./user.entity";
+import { UserEntity } from "../user/user.entity";
 
 export enum RechargeState {
     PENDING = 'PENDING',

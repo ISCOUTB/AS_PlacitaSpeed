@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
-import { LunchEntity } from "./lunch.entity";
-import { UserEntity } from "./user.entity";
+import { LunchEntity } from "../lunch/lunch.entity";
+import { UserEntity } from "../user/user.entity";
 
 export enum TicketState {
     NO_USED = 'NO_USED',

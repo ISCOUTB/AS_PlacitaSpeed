@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
-import { UserEntity } from '../entities/user.entity';
-import { LunchEntity } from '../entities/lunch.entity';
-import { RechargeEntity } from '../entities/recharge.entity';
-import { TicketEntity } from '../entities/ticket.entity';
+import { UserEntity } from './user/user.entity';
+import { LunchEntity } from './lunch/lunch.entity';
+import { RechargeEntity } from './recharge/recharge.entity';
+import { TicketEntity } from './ticket/ticket.entity';
 
 
 export const AppDataSource = new DataSource({
