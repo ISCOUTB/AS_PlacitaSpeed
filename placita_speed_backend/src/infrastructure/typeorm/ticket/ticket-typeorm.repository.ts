@@ -1,19 +1,15 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 
 import { Ticket } from '@domain/ticket/ticket';
 import { TicketEntity } from '../ticket/ticket.entity';
 import { TicketRepositoryPort } from '@domain/ticket/ticket-repository.port';
 
-import { User } from '@domain/user/user';
 import { UserEntity } from '../user/user.entity';
 import { UserTypeormRepository } from '../user/user-typeorm.repository';
 
-import { Lunch } from '@domain/lunch/lunch';
 import { LunchEntity } from '../lunch/lunch.entity';
 import { LunchTypeormRepository } from '../lunch/lunch-typeorm.repository';
-
-// TODO: Quitar el forwardRef y mejorar la inyección de dependencias para evitar acoplamientos circulares
 
 @Injectable()
 export class TicketTypeormRepository implements TicketRepositoryPort {
@@ -21,73 +17,76 @@ export class TicketTypeormRepository implements TicketRepositoryPort {
 
   constructor(
     private dataSource: DataSource,
-    @Inject(forwardRef(() => UserTypeormRepository)) private userRepository: UserTypeormRepository,
-    @Inject(forwardRef(() => LunchTypeormRepository)) private lunchRepository: LunchTypeormRepository
+    private userRepository: UserTypeormRepository,
+    private lunchRepository: LunchTypeormRepository
   ) {
     this.ticketRepository = this.dataSource.getRepository(TicketEntity);
   }
 
   mapToDomain(ticketEntity: TicketEntity): Ticket {
-    let user: User;
-    if (ticketEntity.user) {
-      user = this.userRepository.mapToDomain(ticketEntity.user);
-    } else {
-      user = null as any;
-    }
-
-    let lunch: Lunch;
-    if (ticketEntity.lunch) {
-      lunch = this.lunchRepository.mapToDomain(ticketEntity.lunch);
-    } else {
-      lunch = null as any;
-    }
-
     return new Ticket(
       ticketEntity.id,
       ticketEntity.state,
       ticketEntity.created_at,
       ticketEntity.used_at || null,
-      user,
-      lunch
+      ticketEntity.user.email,
+      ticketEntity.lunch.id
     );
   }
 
-  mapToORM(ticket: Ticket): TicketEntity {
-    let userEnt: UserEntity = this.userRepository.mapToORM(ticket.user);
-    let lunchEnt: LunchEntity = this.lunchRepository.mapToORM(ticket.lunch);
+  mapToORM(ticket: Ticket, user_email: string, lunch_id: number): TicketEntity {
     const ticketEntity = new TicketEntity();
     ticketEntity.id = ticket.id;
     ticketEntity.state = ticket.state;
     ticketEntity.created_at = ticket.created_at;
     ticketEntity.used_at = ticket.used_at || undefined;
-    ticketEntity.user = userEnt;
-    ticketEntity.lunch = lunchEnt;
+
+    this.userRepository.findByEmailORM(user_email)
+    .then(userEntity => {
+      if (!userEntity) {
+        throw new Error(`Usuario con email ${user_email} no encontrado`);
+      }
+      ticketEntity.user = userEntity;
+    });
+
+    this.lunchRepository.findByIdORM(lunch_id)
+    .then(lunchEntity => {
+      if (!lunchEntity) {
+        throw new Error(`Usuario con email ${user_email} no encontrado`);
+      }
+      ticketEntity.lunch = lunchEntity;
+    });
+
     return ticketEntity;
   }
 
-  // Implementation for ticket repository
+  // Buscar por id
   async findById(id: string): Promise<Ticket | null> {
     return this.ticketRepository.findOne({ where: { id }, relations: ['user', 'lunch'] })
       .then(ticketEntity => ticketEntity ? this.mapToDomain(ticketEntity) : null);
   }
 
+  // Buscar todos
   async findAll(): Promise<Ticket[]> {
-    return this.ticketRepository.find({ relations: ['user', 'lunch'] })
-      .then(entities => entities.map((entity) => this.mapToDomain(entity)));
+    const ticketEntities = await this.ticketRepository.find({ relations: ['user', 'lunch'] });
+    return ticketEntities.map(entity => this.mapToDomain(entity))
   }
 
-  async save(ticket: Ticket): Promise<Ticket> {
-    const ticketEntity = this.mapToORM(ticket);
-    return this.ticketRepository.save(ticketEntity)
-      .then(savedEntity => this.mapToDomain(savedEntity));
+  // Guardar
+  async save(ticket: Ticket, user_email: string, lunch_id: number): Promise<Ticket> {
+    const ticketEntity = this.mapToORM(ticket, user_email, lunch_id);
+    const savedEntity = await this.ticketRepository.save(ticketEntity);
+    return this.mapToDomain(savedEntity);
   }
 
-  async update(ticket: Ticket): Promise<Ticket> {
-    const ticketEntity = this.mapToORM(ticket);
-    return this.ticketRepository.save(ticketEntity)
-      .then(updatedEntity => this.mapToDomain(updatedEntity));
+  // Actualizar
+  async update(ticket: Ticket, user_email: string, lunch_id: number): Promise<Ticket> {
+    const ticketEntity = this.mapToORM(ticket, user_email, lunch_id);
+    const savedEntity = await this.ticketRepository.save(ticketEntity)
+    return this.mapToDomain(savedEntity);
   }
 
+  // Borrar por id
   async delete(id: string): Promise<void> {
     return this.ticketRepository.delete(id).then(() => {});
   }

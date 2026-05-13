@@ -1,15 +1,12 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 
 import { Recharge } from '@domain/recharge/recharge';
 import { RechargeEntity } from '../recharge/recharge.entity';
 import { RechargeRepositoryPort } from '@domain/recharge/recharge-repository.port';
 
-import { User } from '@domain/user/user';
 import { UserEntity } from '../user/user.entity';
 import { UserTypeormRepository } from '../user/user-typeorm.repository';
-
-// TODO: Quitar el forwardRef y mejorar la inyección de dependencias para evitar acoplamientos circulares
 
 @Injectable()
 export class RechargeTypeormRepository implements RechargeRepositoryPort {
@@ -17,63 +14,68 @@ export class RechargeTypeormRepository implements RechargeRepositoryPort {
 
   constructor(
     private dataSource: DataSource,
-    @Inject(forwardRef(() => UserTypeormRepository)) private userRepository: UserTypeormRepository
+    private userRepository: UserTypeormRepository
   ) {
     this.rechargeRepository = this.dataSource.getRepository(RechargeEntity);
   }
 
   mapToDomain(rechargeEntity: RechargeEntity): Recharge {
-    let user: User;
-    if (rechargeEntity.user) {
-      user = this.userRepository.mapToDomain(rechargeEntity.user);
-    } else {
-      user = null as any;
-    }
     return new Recharge(
       rechargeEntity.id,
       rechargeEntity.value,
       rechargeEntity.state,
       rechargeEntity.started_at,
       rechargeEntity.ended_at || null,
-      user
+      rechargeEntity.user.email
     );
   }
 
-  mapToORM(recharge: Recharge): RechargeEntity {
-    let userEnt: UserEntity = this.userRepository.mapToORM(recharge.user);
+  mapToORM(recharge: Recharge, user_email: string): RechargeEntity {
     const rechargeEntity = new RechargeEntity();
     rechargeEntity.id = recharge.id;
     rechargeEntity.value = recharge.value;
     rechargeEntity.state = recharge.state;
     rechargeEntity.started_at = recharge.started_at;
     rechargeEntity.ended_at = recharge.ended_at || undefined;
-    rechargeEntity.user = userEnt;
+    
+    const promise = this.userRepository.findByEmailORM(user_email);
+    promise.then(userEntity => {
+      if (!userEntity) {
+        throw new Error(`Usuario con email ${user_email} no encontrado`);
+      }
+      rechargeEntity.user = userEntity; 
+    });
+
     return rechargeEntity;
   }
 
-  // Implementación de métodos del repositorio de recargas
+  // Buscar por id
   async findById(id: string): Promise<Recharge | null> {
     return this.rechargeRepository.findOne({ where: { id }, relations: ['user'] })
       .then(rechargeEntity => rechargeEntity ? this.mapToDomain(rechargeEntity) : null);
   }
 
+  // Buscar todos
   async findAll(): Promise<Recharge[]> {
     const rechargeEntities = await this.rechargeRepository.find({ relations: ['user'] });
     return rechargeEntities.map(entity => this.mapToDomain(entity));
   }
 
-  async save(recharge: Recharge): Promise<Recharge> {
-    const rechargeEntity = this.mapToORM(recharge);
+  // Guardar
+  async save(recharge: Recharge, user_email: string): Promise<Recharge> {
+    const rechargeEntity = this.mapToORM(recharge, user_email);
     const savedEntity = await this.rechargeRepository.save(rechargeEntity);
     return this.mapToDomain(savedEntity);
   }
 
-  async update(recharge: Recharge): Promise<Recharge> {
-    const rechargeEntity = this.mapToORM(recharge);
-    await this.rechargeRepository.save(rechargeEntity);
-    return this.mapToDomain(rechargeEntity);
+  // Actualizar
+  async update(recharge: Recharge, user_email: string): Promise<Recharge> {
+    const rechargeEntity = this.mapToORM(recharge, user_email);
+    const savedEntity = await this.rechargeRepository.save(rechargeEntity);
+    return this.mapToDomain(savedEntity);
   }
 
+  // Borrar por id
   async delete(id: string): Promise<void> {
     await this.rechargeRepository.delete(id);
   }

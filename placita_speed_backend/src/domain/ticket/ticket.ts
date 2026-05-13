@@ -1,6 +1,3 @@
-import { Lunch } from "../lunch/lunch";
-import { User } from "../user/user";
-
 export enum TicketState {
     NO_USED = 'NO_USED',
     USED = 'USED',
@@ -12,22 +9,22 @@ export class Ticket{
     state: string;
     created_at: Date;
     used_at: Date | null;
-    user: User;
-    lunch: Lunch;
+    user_email: string;
+    lunch_id: number;
 
     public constructor(
         id: string,
         state: string,
         created_at: Date,
         used_at: Date | null,
-        user: User,
-        lunch: Lunch
+        user_email: string,
+        lunch_id: number
     ) {
         this.id = id;
         this.state = state;
         this.created_at = created_at;
         this.used_at = used_at;
-        this.user = user;
-        this.lunch = lunch;
+        this.user_email = user_email;
+        this.lunch_id = lunch_id;
     }
 }
