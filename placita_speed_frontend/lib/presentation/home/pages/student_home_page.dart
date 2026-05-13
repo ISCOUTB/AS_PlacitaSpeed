@@ -969,8 +969,8 @@ class _QuickActionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
               color: const Color(0xFFEAF0FF),
               borderRadius: BorderRadius.circular(14),
