@@ -15,24 +15,25 @@ class _AdminHomePageState extends State<AdminHomePage> {
     _InventoryControlItem(name: 'Postres', stock: 10, unit: 'u'),
   ];
 
-  final List<_PaymentReviewItem> _payments = [
-    _PaymentReviewItem(
-      studentName: 'María Gómez',
-      reference: '#PS-2041',
-      amount: '12.000',
+  // Lista de pedidos y su estado (Pendiente / Entregado)
+  final List<_OrderItem> _orders = [
+    _OrderItem(
+      customerName: 'María Gómez',
+      orderRef: '#PD-2041',
+      details: 'Pollo al horno x1',
       status: 'Pendiente',
     ),
-    _PaymentReviewItem(
-      studentName: 'Juan Pérez',
-      reference: '#PS-2042',
-      amount: '13.000',
-      status: 'Verificar',
+    _OrderItem(
+      customerName: 'Juan Pérez',
+      orderRef: '#PD-2042',
+      details: 'Pasta gratinada x2',
+      status: 'Pendiente',
     ),
-    _PaymentReviewItem(
-      studentName: 'Laura Díaz',
-      reference: '#PS-2043',
-      amount: '11.500',
-      status: 'Confirmado',
+    _OrderItem(
+      customerName: 'Laura Díaz',
+      orderRef: '#PD-2043',
+      details: 'Filete de pollo x1',
+      status: 'Entregado',
     ),
   ];
 
@@ -55,9 +56,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
     });
   }
 
-  void _markPaymentVerified(int index) {
+  void _markOrderDelivered(int index) {
     setState(() {
-      _payments[index].status = 'Verificado';
+      _orders[index].status = 'Entregado';
     });
   }
 
@@ -103,7 +104,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                         accentColor: Color(0xFF0052CC),
                       ),
                       _SummaryCard(
-                        title: 'Pagos pendientes',
+                        title: 'Pedidos pendientes',
                         value: '2',
                         icon: Icons.receipt_long_outlined,
                         accentColor: Color(0xFFF59E0B),
@@ -152,23 +153,24 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
                 sliver: SliverToBoxAdapter(
                   child: _SectionHeader(
-                    title: 'Verificación de pagos',
-                    subtitle: 'Aprueba o revisa comprobantes pendientes',
+                    title: 'Pedidos pendientes',
+                    subtitle:
+                        'Lista de pedidos sin entregar; marca como entregado al entregar en mostrador',
                   ),
                 ),
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 sliver: SliverList.separated(
-                  itemCount: _payments.length,
+                  itemCount: _orders.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    final payment = _payments[index];
-                    return _PaymentReviewCard(
-                      payment: payment,
-                      onVerify: payment.status == 'Verificado'
+                    final order = _orders[index];
+                    return _OrderCard(
+                      order: order,
+                      onDeliver: order.status == 'Entregado'
                           ? null
-                          : () => _markPaymentVerified(index),
+                          : () => _markOrderDelivered(index),
                     );
                   },
                 ),
@@ -439,15 +441,15 @@ class _InventoryControlCard extends StatelessWidget {
   }
 }
 
-class _PaymentReviewCard extends StatelessWidget {
-  final _PaymentReviewItem payment;
-  final VoidCallback? onVerify;
+class _OrderCard extends StatelessWidget {
+  final _OrderItem order;
+  final VoidCallback? onDeliver;
 
-  const _PaymentReviewCard({required this.payment, required this.onVerify});
+  const _OrderCard({required this.order, required this.onDeliver});
 
   @override
   Widget build(BuildContext context) {
-    final isVerified = payment.status == 'Verificado';
+    final isDelivered = order.status == 'Entregado';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -465,7 +467,10 @@ class _PaymentReviewCard extends StatelessWidget {
               color: const Color(0xFF0052CC).withAlpha(18),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.receipt_outlined, color: Color(0xFF0052CC)),
+            child: const Icon(
+              Icons.shopping_bag_outlined,
+              color: Color(0xFF0052CC),
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -473,7 +478,7 @@ class _PaymentReviewCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  payment.studentName,
+                  order.customerName,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -482,7 +487,7 @@ class _PaymentReviewCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${payment.reference} · COP ${payment.amount}',
+                  '${order.orderRef} · ${order.details}',
                   style: const TextStyle(
                     fontSize: 13,
                     color: Color(0xFF64748B),
@@ -501,18 +506,18 @@ class _PaymentReviewCard extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color:
-                      (isVerified
+                      (isDelivered
                               ? const Color(0xFF10B981)
                               : const Color(0xFFF59E0B))
                           .withAlpha(24),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  payment.status,
+                  order.status,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: isVerified
+                    color: isDelivered
                         ? const Color(0xFF059669)
                         : const Color(0xFFD97706),
                   ),
@@ -522,12 +527,12 @@ class _PaymentReviewCard extends StatelessWidget {
               SizedBox(
                 height: 36,
                 child: ElevatedButton(
-                  onPressed: onVerify,
+                  onPressed: onDeliver,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isVerified
+                    backgroundColor: isDelivered
                         ? const Color(0xFFE2E8F0)
                         : const Color(0xFF0052CC),
-                    foregroundColor: isVerified
+                    foregroundColor: isDelivered
                         ? const Color(0xFF334155)
                         : Colors.white,
                     elevation: 0,
@@ -535,7 +540,7 @@ class _PaymentReviewCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(isVerified ? 'Listo' : 'Verificar'),
+                  child: Text(isDelivered ? 'Entregado' : 'Entregar'),
                 ),
               ),
             ],
@@ -587,16 +592,16 @@ class _InventoryControlItem {
   });
 }
 
-class _PaymentReviewItem {
-  final String studentName;
-  final String reference;
-  final String amount;
+class _OrderItem {
+  final String customerName;
+  final String orderRef;
+  final String details;
   String status;
 
-  _PaymentReviewItem({
-    required this.studentName,
-    required this.reference,
-    required this.amount,
+  _OrderItem({
+    required this.customerName,
+    required this.orderRef,
+    required this.details,
     required this.status,
   });
 }
