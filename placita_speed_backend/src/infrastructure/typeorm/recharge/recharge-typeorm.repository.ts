@@ -9,28 +9,29 @@ import { UserEntity } from '../user/user.entity';
 import { UserTypeormRepository } from '../user/user-typeorm.repository';
 
 @Injectable()
-export class RechargeTypeormRepository implements RechargeRepositoryPort {
+export class RechargeTypeormRepository extends RechargeRepositoryPort {
   private rechargeRepository: Repository<RechargeEntity>;
 
   constructor(
     private dataSource: DataSource,
     private userRepository: UserTypeormRepository
   ) {
+    super();
     this.rechargeRepository = this.dataSource.getRepository(RechargeEntity);
   }
 
   mapToDomain(rechargeEntity: RechargeEntity): Recharge {
-    return new Recharge(
-      rechargeEntity.id,
-      rechargeEntity.value,
-      rechargeEntity.state,
-      rechargeEntity.started_at,
-      rechargeEntity.ended_at || null,
-      rechargeEntity.user.email
-    );
+    const recharge = new Recharge();
+    recharge.id = rechargeEntity.id;
+    recharge.value = rechargeEntity.value;
+    recharge.state = rechargeEntity.state;
+    recharge.started_at = rechargeEntity.started_at;
+    recharge.ended_at = rechargeEntity.ended_at;
+    recharge.user_email =  rechargeEntity.user.email;
+    return recharge;
   }
 
-  mapToORM(recharge: Recharge, user_email: string): RechargeEntity {
+  async mapToORM(recharge: Recharge, user_email: string): Promise<RechargeEntity> {
     const rechargeEntity = new RechargeEntity();
     rechargeEntity.id = recharge.id;
     rechargeEntity.value = recharge.value;
@@ -38,13 +39,20 @@ export class RechargeTypeormRepository implements RechargeRepositoryPort {
     rechargeEntity.started_at = recharge.started_at;
     rechargeEntity.ended_at = recharge.ended_at || undefined;
     
+    let userEntity = await this.userRepository.findByEmailORM(user_email)
+    if (!userEntity) {
+      throw new Error(`Usuario con email ${user_email} no encontrado`);
+    }
+    rechargeEntity.user = userEntity;
+
+    /*
     const promise = this.userRepository.findByEmailORM(user_email);
     promise.then(userEntity => {
       if (!userEntity) {
         throw new Error(`Usuario con email ${user_email} no encontrado`);
       }
       rechargeEntity.user = userEntity; 
-    });
+    });*/
 
     return rechargeEntity;
   }
@@ -62,21 +70,30 @@ export class RechargeTypeormRepository implements RechargeRepositoryPort {
   }
 
   // Guardar
-  async save(recharge: Recharge, user_email: string): Promise<Recharge> {
-    const rechargeEntity = this.mapToORM(recharge, user_email);
+  async save(recharge: Recharge): Promise<Recharge> {
+    const rechargeEntity = await this.mapToORM(recharge, recharge.user_email);
     const savedEntity = await this.rechargeRepository.save(rechargeEntity);
     return this.mapToDomain(savedEntity);
   }
 
   // Actualizar
-  async update(recharge: Recharge, user_email: string): Promise<Recharge> {
-    const rechargeEntity = this.mapToORM(recharge, user_email);
-    const savedEntity = await this.rechargeRepository.save(rechargeEntity);
-    return this.mapToDomain(savedEntity);
+  async update(recharge: Recharge) {
+    const rechargeEntity = await this.mapToORM(recharge, recharge.user_email);
+    const savedEntity = await this.rechargeRepository.update({ id: recharge.id }, rechargeEntity);
+    //return this.mapToDomain(savedEntity);
   }
 
   // Borrar por id
-  async delete(id: string): Promise<void> {
+  async delete(id: string) {
     await this.rechargeRepository.delete(id);
   }
+
+  async findRechargesByUser(email: string): Promise<Recharge[]> {
+    const rechargeEntities = await this.rechargeRepository.find({
+      where: { user: { email } },
+      relations: ['user']
+    });
+    return rechargeEntities.map(entity => this.mapToDomain(entity));
+  }
+
 }

@@ -1,9 +1,14 @@
+import { Injectable } from '@nestjs/common';
+import { Recharge } from '@domain/recharge/recharge';
+import { Ticket } from '../ticket/ticket';
 import { User } from './user';
 
-export interface UserRepositoryPort {
-    findByEmail(email: string): Promise<User | null>;
-    findAll(): Promise<User[]>;
-    save(user: User): Promise<User>;
-    update(user: User): Promise<User>;
-    delete(email: string): Promise<void>;
+@Injectable()
+export abstract class UserRepositoryPort {
+    abstract findByEmail(email: string): Promise<User | null>;
+    abstract findAll(): Promise<User[]>;
+    abstract save(user: User): Promise<User>;
+    abstract update(user: User): void;
+    abstract delete(email: string): void;
+    abstract updateLastAccess(email: string): void;
 }

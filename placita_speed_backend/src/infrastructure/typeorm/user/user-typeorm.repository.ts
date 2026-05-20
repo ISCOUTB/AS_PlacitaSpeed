@@ -6,26 +6,29 @@ import { UserEntity } from '../user/user.entity';
 import { UserRepositoryPort } from '@domain/user/user-repository.port';
 
 @Injectable()
-export class UserTypeormRepository implements UserRepositoryPort {
+export class UserTypeormRepository extends UserRepositoryPort {
     private userRepository: Repository<UserEntity>;
 
     constructor(private dataSource: DataSource) {
+        super();
         this.userRepository = this.dataSource.getRepository(UserEntity);
     }
 
     mapToDomain(userEntity: UserEntity): User {
-        return new User(
-            userEntity.email,
-            userEntity.role,
-            Number(userEntity.virtual_balance), // TypeORM puede devolver Decimal, convertir a number
-            userEntity.created_at,
-            userEntity.last_access,
-        );
+        const user = new User();
+        user.email = userEntity.email;
+        user.password = userEntity.password;
+        user.role = userEntity.role;
+        user.virtual_balance = Number(userEntity.virtual_balance);
+        user.created_at = userEntity.created_at;
+        user.last_access = userEntity.last_access;
+        return user;
     }
 
     mapToORM(user: User): UserEntity {
         const userEntity = new UserEntity();
         userEntity.email = user.email;
+        userEntity.password = user.password;
         userEntity.role = user.role;
         userEntity.virtual_balance = user.virtual_balance;
         userEntity.created_at = user.created_at;
@@ -65,14 +68,21 @@ export class UserTypeormRepository implements UserRepositoryPort {
     }
 
     // Actualizar un usuario existente
-    async update(user: User): Promise<User> {
+    async update(user: User, password: string = '') {
         const userEntity = this.mapToORM(user);
-        const updatedUser = await this.userRepository.save(userEntity);
-        return this.mapToDomain(updatedUser);
+        if (password) {
+            userEntity.password = password;
+        }
+        const updatedUser = await this.userRepository.update({ email: user.email }, userEntity);
+        //return this.mapToDomain(updatedUser);
     }
 
     // Eliminar un usuario por email
-    async delete(email: string): Promise<void> {
+    async delete(email: string) {
         await this.userRepository.delete({ email });
+    }
+
+    async updateLastAccess(email: string) {
+        await this.userRepository.update({ email }, { last_access: new Date() });
     }
 }

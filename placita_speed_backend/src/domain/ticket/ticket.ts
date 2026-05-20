@@ -5,26 +5,10 @@ export enum TicketState {
 }
 
 export class Ticket{
-    id: string;
-    state: string;
-    created_at: Date;
-    used_at: Date | null;
-    user_email: string;
-    lunch_id: number;
-
-    public constructor(
-        id: string,
-        state: string,
-        created_at: Date,
-        used_at: Date | null,
-        user_email: string,
-        lunch_id: number
-    ) {
-        this.id = id;
-        this.state = state;
-        this.created_at = created_at;
-        this.used_at = used_at;
-        this.user_email = user_email;
-        this.lunch_id = lunch_id;
-    }
+    id!: string;
+    state!: TicketState;
+    created_at!: Date;
+    used_at?: Date;
+    user_email!: string;
+    lunch_id!: number;
 }

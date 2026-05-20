@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { Lunch } from './lunch';
 
 /**
@@ -5,11 +6,12 @@ import { Lunch } from './lunch';
  * Define el contrato que cualquier adaptador de persistencia debe cumplir
  * Esta interfaz pertenece al dominio y es independiente de TypeORM
  */
-export interface LunchRepositoryPort {
-  findById(id: number): Promise<Lunch | null>;
-  findAll(): Promise<Lunch[]>;
-  findAvailable(): Promise<Lunch[]>;
-  save(lunch: Lunch): Promise<Lunch>;
-  update(lunch: Lunch): Promise<Lunch>;
-  delete(id: number): Promise<void>;
+@Injectable()
+export abstract class LunchRepositoryPort {
+  abstract findById(id: number): Promise<Lunch | null>;
+  abstract findAll(): Promise<Lunch[]>;
+  abstract findAvailable(): Promise<Lunch[]>;
+  abstract save(lunch: Lunch): Promise<Lunch>;
+  abstract update(lunch: Lunch): void;
+  abstract delete(id: number): void;
 }

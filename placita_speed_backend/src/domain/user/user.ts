@@ -4,23 +4,10 @@ export enum UserRole {
 }
 
 export class User {
-    email: string;
-    role: UserRole;
-    virtual_balance: number;
-    created_at: Date;
-    last_access: Date;
-
-    public constructor(
-        email: string,
-        role: UserRole,
-        virtual_balance: number,
-        created_at: Date,
-        last_access: Date,
-    ) {
-        this.email = email;
-        this.role = role;
-        this.virtual_balance = virtual_balance;
-        this.created_at = created_at;
-        this.last_access = last_access;
-    }
+    email!: string;
+    password!: string;
+    role!: UserRole;
+    virtual_balance: number = 0;
+    created_at!: Date;
+    last_access?: Date;
 }

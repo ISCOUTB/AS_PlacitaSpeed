@@ -1,12 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
 import { LunchEntity } from "../lunch/lunch.entity";
 import { UserEntity } from "../user/user.entity";
-
-export enum TicketState {
-    NO_USED = 'NO_USED',
-    USED = 'USED',
-    EXPIRED = 'EXPIRED'
-}
+import { TicketState } from "@domain/ticket/ticket";
 
 @Entity('ticket')
 export class TicketEntity{
@@ -14,7 +9,7 @@ export class TicketEntity{
     id!: string;
 
     @Column({type: 'enum', enum: TicketState, default: TicketState.NO_USED})
-    state!: string;
+    state!: TicketState;
 
     @Column({type: 'timestamp', default: () => 'CURRENT_TIMESTAMP'})
     created_at!: Date;
