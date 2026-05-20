@@ -9,11 +9,13 @@ Color _withOpacity(Color color, double opacity) {
 /// Widget del formulario de login
 /// Componente de presentación que contiene los campos de entrada
 class LoginFormWidget extends StatefulWidget {
+  final String accessModeLabel;
   final Function(BuildContext) onLoginPressed;
   final void Function(String email, String password) onCredentialsChanged;
 
   const LoginFormWidget({
     super.key,
+    required this.accessModeLabel,
     required this.onLoginPressed,
     required this.onCredentialsChanged,
   });
@@ -70,6 +72,34 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: _withOpacity(AppTheme.white, 0.12),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: _withOpacity(AppTheme.white, 0.22)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.badge_outlined,
+                    size: 16,
+                    color: AppTheme.white,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    widget.accessModeLabel,
+                    style: const TextStyle(
+                      color: AppTheme.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
             // Campo de email
             TextField(
               controller: _emailController,
@@ -77,9 +107,7 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
               style: const TextStyle(color: AppTheme.white),
               decoration: InputDecoration(
                 hintText: 'Correo electrónico',
-                hintStyle: TextStyle(
-                  color: _withOpacity(AppTheme.white, 0.6),
-                ),
+                hintStyle: TextStyle(color: _withOpacity(AppTheme.white, 0.6)),
                 prefixIcon: Icon(
                   Icons.email_outlined,
                   color: _withOpacity(AppTheme.white, 0.8),
@@ -100,10 +128,7 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: AppTheme.white,
-                    width: 2,
-                  ),
+                  borderSide: const BorderSide(color: AppTheme.white, width: 2),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   vertical: 16,
@@ -121,9 +146,7 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
               style: const TextStyle(color: AppTheme.white),
               decoration: InputDecoration(
                 hintText: 'Contraseña',
-                hintStyle: TextStyle(
-                  color: _withOpacity(AppTheme.white, 0.6),
-                ),
+                hintStyle: TextStyle(color: _withOpacity(AppTheme.white, 0.6)),
                 prefixIcon: Icon(
                   Icons.lock_outlined,
                   color: _withOpacity(AppTheme.white, 0.8),
@@ -157,10 +180,7 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: AppTheme.white,
-                    width: 2,
-                  ),
+                  borderSide: const BorderSide(color: AppTheme.white, width: 2),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   vertical: 16,
@@ -196,7 +216,7 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                         ),
                       )
                     : Text(
-                        'Iniciar Sesión',
+                        'Entrar como ${widget.accessModeLabel}',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
