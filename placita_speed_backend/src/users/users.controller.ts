@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/user.dto';
-import { User } from './user.entity';
+import { CreateUserDto, UpdateBalanceDto } from './dto/user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -13,12 +12,17 @@ export class UsersController {
   }
 
   @Get(':email')
-  async updateLastAccess(@Param('email') email: string) {
+  async findOne(@Param('email') email: string) {
     return this.usersService.updateLastAccess(email);
   }
 
   @Post()
-  async create(@Body() user: CreateUserDto): Promise<User> {
-    return this.usersService.create(user);
+  async create(@Body() dto: CreateUserDto) {
+    return this.usersService.create(dto);
+  }
+
+  @Patch(':email/balance')
+  async addBalance(@Param('email') email: string, @Body() dto: UpdateBalanceDto) {
+    return this.usersService.addBalance(email, dto);
   }
 }

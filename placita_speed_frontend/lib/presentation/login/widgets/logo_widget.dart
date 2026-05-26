@@ -1,27 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:placita_speed_frontend/presentation/theme/app_theme.dart';
 
-/// Helper function para crear colores con opacidad de forma segura
 Color _withOpacity(Color color, double opacity) {
   return color.withAlpha((opacity * 255).toInt());
 }
 
-/// Widget que muestra el logo y nombre de la aplicación
-/// Arquitectura de presentación - Componente reutilizable
 class LogoWidget extends StatelessWidget {
   final double logoSize;
 
-  const LogoWidget({
-    super.key,
-    this.logoSize = 120.0,
-  });
+  const LogoWidget({super.key, this.logoSize = 120.0});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Logo UTB - Placeholder circular con iniciales
         Container(
           width: logoSize,
           height: logoSize,
@@ -49,7 +42,6 @@ class LogoWidget extends StatelessWidget {
           ),
         ),
         SizedBox(height: logoSize * 0.3),
-        // Nombre de la aplicación en cursiva
         Text(
           'placita speed',
           style: AppTheme.logoNameStyle.copyWith(

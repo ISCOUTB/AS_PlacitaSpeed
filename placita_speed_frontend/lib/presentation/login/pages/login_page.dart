@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:placita_speed_frontend/config/app_config.dart';
 import 'package:placita_speed_frontend/presentation/home/pages/admin_home_page.dart';
-import 'package:placita_speed_frontend/presentation/home/pages/home_page.dart';
+import 'package:placita_speed_frontend/presentation/home/pages/student_home_page.dart';
 import 'package:placita_speed_frontend/presentation/login/widgets/logo_widget.dart';
 import 'package:placita_speed_frontend/presentation/login/widgets/login_form.dart';
 import 'package:placita_speed_frontend/presentation/theme/app_theme.dart';
@@ -24,8 +25,6 @@ extension LoginAccessModeLabel on LoginAccessMode {
   };
 }
 
-/// Página de Login
-/// Capa de Presentación - Organiza la interfaz de autenticación
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -36,34 +35,34 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   LoginAccessMode _accessMode = LoginAccessMode.student;
 
-  void _onCredentialsChanged(String email, String password) {
-    // Validación adicional con la contraseña será implementada con state management
-  }
+  Future<void> _onLoginPressed(
+    BuildContext context,
+    String email,
+    String password,
+  ) async {
+    final user = await AppConfig().authRepository.login(email, password);
 
-  void _onLoginPressed(BuildContext context) {
-    final Widget targetPage = switch (_accessMode) {
-      LoginAccessMode.student => const HomePage(),
-      LoginAccessMode.admin => const AdminHomePage(),
-    };
+    if (!context.mounted) return;
 
-    // Validación exitosa - Navegar a la vista correspondiente
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => targetPage));
+    final targetPage = user.userType == 'admin'
+        ? const AdminHomePage()
+        : const StudentHomePage();
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => targetPage),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isMobile = screenSize.width < 600;
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
       backgroundColor: AppTheme.primaryBlue,
       body: Stack(
         children: [
           Container(
-            // Fondo azul degradado completo
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -79,9 +78,7 @@ class _LoginPageState extends State<LoginPage> {
               child: _AccessModeToggle(
                 label: _accessMode.actionLabel,
                 onPressed: () {
-                  setState(() {
-                    _accessMode = _accessMode.alternate;
-                  });
+                  setState(() => _accessMode = _accessMode.alternate);
                 },
               ),
             ),
@@ -91,30 +88,25 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Layout para versión móvil
   Widget _buildMobileLayout() {
     return SafeArea(
       child: SingleChildScrollView(
         child: SizedBox(
-          height:
-              MediaQuery.of(context).size.height -
+          height: MediaQuery.of(context).size.height -
               MediaQuery.of(context).padding.top -
               MediaQuery.of(context).padding.bottom,
           child: Column(
             children: [
-              // Logo y nombre de la app
               Expanded(
                 flex: 2,
                 child: Center(child: LogoWidget(logoSize: 100)),
               ),
-              // Formulario de login
               Expanded(
                 flex: 3,
                 child: SingleChildScrollView(
                   child: LoginFormWidget(
                     accessModeLabel: _accessMode.label,
                     onLoginPressed: _onLoginPressed,
-                    onCredentialsChanged: _onCredentialsChanged,
                   ),
                 ),
               ),
@@ -125,14 +117,11 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Layout para versión web
   Widget _buildWebLayout() {
     return SafeArea(
       child: Row(
         children: [
-          // Lado izquierdo: Logo
           Expanded(flex: 1, child: Center(child: LogoWidget(logoSize: 150))),
-          // Lado derecho: Formulario
           Expanded(
             flex: 1,
             child: Center(
@@ -142,7 +131,6 @@ class _LoginPageState extends State<LoginPage> {
                   child: LoginFormWidget(
                     accessModeLabel: _accessMode.label,
                     onLoginPressed: _onLoginPressed,
-                    onCredentialsChanged: _onCredentialsChanged,
                   ),
                 ),
               ),
@@ -177,11 +165,7 @@ class _AccessModeToggle extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.swap_horiz_rounded,
-                size: 16,
-                color: Colors.white,
-              ),
+              const Icon(Icons.swap_horiz_rounded, size: 16, color: Colors.white),
               const SizedBox(width: 6),
               Text(
                 label,

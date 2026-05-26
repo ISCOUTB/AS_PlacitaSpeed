@@ -1,12 +1,10 @@
 import 'package:equatable/equatable.dart';
 
-/// Entidad de Usuario - Capa de Dominio
-/// Representa un usuario de la aplicación Placita Speed
 class UserEntity extends Equatable {
   final String id;
   final String email;
   final String name;
-  final String userType; // 'student' o 'admin'
+  final String userType;
   final double virtualBalance;
 
   const UserEntity({

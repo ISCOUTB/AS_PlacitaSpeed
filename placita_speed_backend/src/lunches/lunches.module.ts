@@ -6,7 +6,7 @@ import { Lunch } from './lunch.entity';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Lunch])],
-    exports: [TypeOrmModule],
+    exports: [LunchesService],
     providers: [LunchesService],
     controllers: [LunchesController]
 })

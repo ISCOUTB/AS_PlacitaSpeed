@@ -2,7 +2,8 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { User } from './user.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateUserDto } from './dto/user.dto';
+import { CreateUserDto, UpdateBalanceDto } from './dto/user.dto';
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -10,26 +11,41 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  // Listar todos los usuarios. No sería necesario en producción
   async findAll(): Promise<User[]> {
     return this.usersRepository.find();
   }
 
-  // Buscar un solo usuario
-  async findOne(email: string): Promise<User|null> {
-    return this.usersRepository.findOne({ where: { email } });
+  async findOne(email: string): Promise<User> {
+    const user = await this.usersRepository.findOne({ where: { email } });
+    if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    return user;
   }
 
-  // Crear usuario mediante su email
   async create(user: CreateUserDto): Promise<User> {
-    if (await this.findOne(user.email)) {
-      throw new HttpException('User already exists', HttpStatus.CONFLICT);
-    }
+    const exists = await this.usersRepository.findOne({ where: { email: user.email } });
+    if (exists) throw new HttpException('User already exists', HttpStatus.CONFLICT);
     return this.usersRepository.save(user);
   }
 
-  // Actualizar la fecha y hora de último acceso
-  async updateLastAccess(email: string): Promise<void> {
+  async updateLastAccess(email: string): Promise<User> {
+    await this.findOne(email);
     await this.usersRepository.update({ email }, { last_access: new Date() });
+    return this.findOne(email);
+  }
+
+  async addBalance(email: string, dto: UpdateBalanceDto): Promise<User> {
+    const user = await this.findOne(email);
+    const newBalance = Number(user.virtual_balance) + dto.value;
+    await this.usersRepository.update({ email }, { virtual_balance: newBalance });
+    return this.findOne(email);
+  }
+
+  async deductBalance(email: string, amount: number): Promise<void> {
+    const user = await this.findOne(email);
+    if (Number(user.virtual_balance) < amount) {
+      throw new HttpException('Insufficient balance', HttpStatus.BAD_REQUEST);
+    }
+    const newBalance = Number(user.virtual_balance) - amount;
+    await this.usersRepository.update({ email }, { virtual_balance: newBalance });
   }
 }

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:placita_speed_frontend/infrastructure/services/api_service.dart';
+import 'package:placita_speed_frontend/presentation/login/pages/login_page.dart';
+import 'package:placita_speed_frontend/presentation/ticket/pages/ticket_page.dart';
 import 'package:placita_speed_frontend/presentation/theme/app_theme.dart';
 
 class StudentHomePage extends StatefulWidget {
@@ -73,12 +76,36 @@ class _StudentHomePageState extends State<StudentHomePage> {
     });
   }
 
+  Future<void> _handleOrder(BuildContext context) async {
+    try {
+      final ticket = await ApiService.createTicket(
+        userEmail: 'estudiante@utb.edu.co',
+        lunchId: 1,
+      );
+      if (!context.mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => TicketPage(ticket: ticket)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   void _openDrawer() {
     _scaffoldKey.currentState?.openDrawer();
   }
 
   void _logout(BuildContext context) {
-    Navigator.of(context).pop();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
   }
 
   @override
@@ -113,6 +140,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
                 timeline: _todayTimeline,
                 inventory: _todayInventory,
                 onMenuTap: _openDrawer,
+                onOrder: _handleOrder,
               ),
               _ProfileSection(
                 onMenuTap: _openDrawer,
@@ -186,11 +214,13 @@ class _OrderSection extends StatelessWidget {
   final List<_TimelineItem> timeline;
   final List<_InventoryItem> inventory;
   final VoidCallback onMenuTap;
+  final Future<void> Function(BuildContext) onOrder;
 
   const _OrderSection({
     required this.timeline,
     required this.inventory,
     required this.onMenuTap,
+    required this.onOrder,
   });
 
   @override
@@ -233,6 +263,7 @@ class _OrderSection extends StatelessWidget {
               subtitle: 'Incluye bebida del día y postre de frutas',
               price: '12.000',
               availability: 'Inventario del día actual',
+              onOrder: onOrder,
             ),
           ),
         ),
@@ -303,11 +334,7 @@ class _ProfileSection extends StatelessWidget {
           sliver: SliverToBoxAdapter(
             child: _ProfileSummaryCard(
               name: 'Fabian Andres Granados Moron',
-              email: 'fgranados@utb.edu.co',
-              program: 'Ingeniería Mecatrónica',
-              period: '2026-1',
               balance: '48.500',
-              ordersToday: 3,
             ),
           ),
         ),
@@ -819,18 +846,33 @@ class _OrderSummaryCard extends StatelessWidget {
   }
 }
 
-class _DailyMenuCard extends StatelessWidget {
+class _DailyMenuCard extends StatefulWidget {
   final String title;
   final String subtitle;
   final String price;
   final String availability;
+  final Future<void> Function(BuildContext) onOrder;
 
   const _DailyMenuCard({
     required this.title,
     required this.subtitle,
     required this.price,
     required this.availability,
+    required this.onOrder,
   });
+
+  @override
+  State<_DailyMenuCard> createState() => _DailyMenuCardState();
+}
+
+class _DailyMenuCardState extends State<_DailyMenuCard> {
+  bool _isOrdering = false;
+
+  Future<void> _handleOrder() async {
+    setState(() => _isOrdering = true);
+    await widget.onOrder(context);
+    if (mounted) setState(() => _isOrdering = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -864,7 +906,7 @@ class _DailyMenuCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      widget.title,
                       style: const TextStyle(
                         color: Color(0xFF1B1B1B),
                         fontSize: 17,
@@ -873,7 +915,7 @@ class _DailyMenuCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      subtitle,
+                      widget.subtitle,
                       style: TextStyle(
                         color: AppTheme.textGray.withAlpha(220),
                         height: 1.3,
@@ -888,7 +930,7 @@ class _DailyMenuCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                price,
+                widget.price,
                 style: const TextStyle(
                   color: AppTheme.primaryBlue,
                   fontSize: 28,
@@ -898,7 +940,7 @@ class _DailyMenuCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  availability,
+                  widget.availability,
                   style: const TextStyle(
                     color: Color(0xFF49A46C),
                     fontWeight: FontWeight.w700,
@@ -912,7 +954,7 @@ class _DailyMenuCard extends StatelessWidget {
             children: [
               Expanded(
                 child: FilledButton(
-                  onPressed: () {},
+                  onPressed: _isOrdering ? null : _handleOrder,
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
                     backgroundColor: AppTheme.primaryBlue,
@@ -921,7 +963,16 @@ class _DailyMenuCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text('Ordenar ahora'),
+                  child: _isOrdering
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Ordenar ahora'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1141,19 +1192,11 @@ class _TimelineCard extends StatelessWidget {
 
 class _ProfileSummaryCard extends StatelessWidget {
   final String name;
-  final String email;
-  final String program;
-  final String period;
   final String balance;
-  final int ordersToday;
 
   const _ProfileSummaryCard({
     required this.name,
-    required this.email,
-    required this.program,
-    required this.period,
     required this.balance,
-    required this.ordersToday,
   });
 
   @override
@@ -1190,35 +1233,19 @@ class _ProfileSummaryCard extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        color: Color(0xFF1B1B1B),
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      email,
-                      style: TextStyle(color: AppTheme.textGray.withAlpha(220)),
-                    ),
-                  ],
+                child: Text(
+                  name,
+                  style: const TextStyle(
+                    color: Color(0xFF1B1B1B),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 18),
-          _ProfileDataRow(label: 'Programa', value: program),
-          const SizedBox(height: 12),
-          _ProfileDataRow(label: 'Período académico', value: period),
-          const SizedBox(height: 18),
           _ProfileMetricTile(title: 'Saldo disponible', value: balance),
-          const SizedBox(height: 12),
-          _ProfileMetricTile(title: 'Pedidos hoy', value: '$ordersToday'),
         ],
       ),
     );

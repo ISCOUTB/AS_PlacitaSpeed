@@ -1,56 +1,60 @@
 import 'package:placita_speed_frontend/domain/entities/user_entity.dart';
 import 'package:placita_speed_frontend/domain/repositories/auth_repository.dart';
 
-/// Implementación del Repositorio de Autenticación - Capa de Infraestructura
-/// Por ahora, solo contiene lógica dummy para el MVP sin funcionalidades reales
 class AuthRepositoryImpl extends AuthRepository {
-  /// En una implementación real, aquí se llamaría al backend API
-  /// Para el MVP visual, solo retornamos datos dummy
+  static const _users = [
+    {
+      'email': 'estudiante@utb.edu.co',
+      'password': 'estudiante123',
+      'name': 'Fabian Granados',
+      'userType': 'student',
+      'virtualBalance': 48500.0,
+    },
+    {
+      'email': 'admin@utb.edu.co',
+      'password': 'admin123',
+      'name': 'Administrador UTB',
+      'userType': 'admin',
+      'virtualBalance': 0.0,
+    },
+  ];
+
+  UserEntity? _currentUser;
 
   @override
   Future<UserEntity> login(String email, String password) async {
-    // Será implementado cuando el backend esté disponible
-    await Future.delayed(const Duration(milliseconds: 500));
-    return const UserEntity(
-      id: '1',
-      email: 'estudiante@utb.edu.co',
-      name: 'Estudiante UTB',
-      userType: 'student',
-      virtualBalance: 50000.0,
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    final match = _users.where(
+      (u) => u['email'] == email.trim() && u['password'] == password,
     );
-  }
 
-  @override
-  Future<UserEntity> register(
-      String email, String password, String name) async {
-    // Será implementado cuando el backend esté disponible
-    await Future.delayed(const Duration(milliseconds: 500));
-    return UserEntity(
-      id: '2',
-      email: email,
-      name: name,
-      userType: 'student',
-      virtualBalance: 0.0,
+    if (match.isEmpty) {
+      throw Exception('Correo o contraseña incorrectos');
+    }
+
+    final data = match.first;
+    _currentUser = UserEntity(
+      id: data['email'] as String,
+      email: data['email'] as String,
+      name: data['name'] as String,
+      userType: data['userType'] as String,
+      virtualBalance: data['virtualBalance'] as double,
     );
+    return _currentUser!;
   }
 
   @override
-  Future<UserEntity?> getCurrentUser() async {
-    // Será implementado cuando el backend esté disponible
-    await Future.delayed(const Duration(milliseconds: 300));
-    return null;
+  Future<UserEntity> register(String email, String password, String name) async {
+    throw UnimplementedError('Registro no disponible en modo offline');
   }
 
   @override
-  Future<void> logout() async {
-    // Será implementado cuando el backend esté disponible
-    await Future.delayed(const Duration(milliseconds: 300));
-  }
+  Future<UserEntity?> getCurrentUser() async => _currentUser;
 
   @override
-  Future<bool> isAuthenticated() async {
-    // Será implementado cuando el backend esté disponible
-    await Future.delayed(const Duration(milliseconds: 300));
-    return false;
-  }
+  Future<void> logout() async => _currentUser = null;
+
+  @override
+  Future<bool> isAuthenticated() async => _currentUser != null;
 }

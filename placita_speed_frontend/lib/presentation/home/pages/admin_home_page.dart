@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:placita_speed_frontend/presentation/login/pages/login_page.dart';
+import 'package:placita_speed_frontend/presentation/scanner/pages/qr_scanner_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -15,7 +17,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
     _InventoryControlItem(name: 'Postres', stock: 10, unit: 'u'),
   ];
 
-  // Lista de pedidos y su estado (Pendiente / Entregado)
   final List<_OrderItem> _orders = [
     _OrderItem(
       customerName: 'María Gómez',
@@ -68,6 +69,18 @@ class _AdminHomePageState extends State<AdminHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FB),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const QrScannerPage()),
+        ),
+        backgroundColor: const Color(0xFF0052CC),
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.qr_code_scanner_rounded),
+        label: const Text(
+          'Escanear QR',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -97,7 +110,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 1.7,
+                    childAspectRatio: 1.3,
                     children: const [
                       _SummaryCard(
                         title: 'Stock total',
@@ -208,74 +221,83 @@ class _AdminHeader extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(28),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.manage_accounts_outlined,
-              color: Colors.white,
-              size: 30,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(28),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.manage_accounts_outlined,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
                   'Panel administrativo',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Gestiona inventario y revisa pagos sin salir de un mismo panel.',
-                  style: TextStyle(
-                    color: Colors.white.withAlpha(214),
-                    fontSize: 13,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const Text(
-                'Stock activo',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
               ),
-              Text(
-                '$totalStock',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
+              Material(
+                color: Colors.white.withAlpha(24),
+                shape: const CircleBorder(),
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  ),
+                  icon: const Icon(Icons.logout, color: Colors.white, size: 20),
+                  tooltip: 'Cerrar sesión',
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(width: 12),
-          // Botón para cerrar sesión y volver a la pantalla de login
-          Material(
-            color: Colors.white.withAlpha(24),
-            shape: const CircleBorder(),
-            child: IconButton(
-              onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
-              icon: const Icon(Icons.logout, color: Colors.white),
-              tooltip: 'Cerrar sesión',
-            ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Gestiona inventario y pedidos',
+                style: TextStyle(
+                  color: Colors.white.withAlpha(200),
+                  fontSize: 13,
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text(
+                    'Stock activo',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                  Text(
+                    '$totalStock',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),

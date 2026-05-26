@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:placita_speed_frontend/presentation/theme/app_theme.dart';
 
-/// Helper function para crear colores con opacidad de forma segura
-Color _withOpacity(Color color, double opacity) {
-  return color.withAlpha((opacity * 255).toInt());
-}
+Color _withOpacity(Color color, double opacity) =>
+    color.withAlpha((opacity * 255).toInt());
 
-/// Widget del formulario de login
-/// Componente de presentación que contiene los campos de entrada
 class LoginFormWidget extends StatefulWidget {
   final String accessModeLabel;
-  final Function(BuildContext) onLoginPressed;
-  final void Function(String email, String password) onCredentialsChanged;
+  final Future<void> Function(BuildContext context, String email, String password)
+      onLoginPressed;
 
   const LoginFormWidget({
     super.key,
     required this.accessModeLabel,
     required this.onLoginPressed,
-    required this.onCredentialsChanged,
   });
 
   @override
@@ -25,17 +20,11 @@ class LoginFormWidget extends StatefulWidget {
 }
 
 class _LoginFormWidgetState extends State<LoginFormWidget> {
-  late TextEditingController _emailController;
-  late TextEditingController _passwordController;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _emailController = TextEditingController();
-    _passwordController = TextEditingController();
-  }
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -44,19 +33,29 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    setState(() => _isLoading = true);
-    widget.onCredentialsChanged(
-      _emailController.text,
-      _passwordController.text,
-    );
-    // Simular delay de request
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        widget.onLoginPressed(context);
-      }
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = 'Completa todos los campos');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      await widget.onLoginPressed(context, email, password);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _errorMessage = e.toString().replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -82,11 +81,7 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.badge_outlined,
-                    size: 16,
-                    color: AppTheme.white,
-                  ),
+                  const Icon(Icons.badge_outlined, size: 16, color: AppTheme.white),
                   const SizedBox(width: 6),
                   Text(
                     widget.accessModeLabel,
@@ -100,45 +95,37 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
               ),
             ),
             const SizedBox(height: 20),
-            // Campo de email
             TextField(
               controller: _emailController,
               enabled: !_isLoading,
               style: const TextStyle(color: AppTheme.white),
+              keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
                 hintText: 'Correo electrónico',
                 hintStyle: TextStyle(color: _withOpacity(AppTheme.white, 0.6)),
-                prefixIcon: Icon(
-                  Icons.email_outlined,
-                  color: _withOpacity(AppTheme.white, 0.8),
-                ),
+                prefixIcon: Icon(Icons.email_outlined,
+                    color: _withOpacity(AppTheme.white, 0.8)),
                 filled: true,
                 fillColor: _withOpacity(AppTheme.white, 0.1),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: _withOpacity(AppTheme.white, 0.3),
-                  ),
+                  borderSide:
+                      BorderSide(color: _withOpacity(AppTheme.white, 0.3)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: _withOpacity(AppTheme.white, 0.3),
-                  ),
+                  borderSide:
+                      BorderSide(color: _withOpacity(AppTheme.white, 0.3)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(color: AppTheme.white, width: 2),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 12,
-                ),
+                    vertical: 16, horizontal: 12),
               ),
-              keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 20),
-            // Campo de contraseña
             TextField(
               controller: _passwordController,
               enabled: !_isLoading,
@@ -147,10 +134,8 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
               decoration: InputDecoration(
                 hintText: 'Contraseña',
                 hintStyle: TextStyle(color: _withOpacity(AppTheme.white, 0.6)),
-                prefixIcon: Icon(
-                  Icons.lock_outlined,
-                  color: _withOpacity(AppTheme.white, 0.8),
-                ),
+                prefixIcon: Icon(Icons.lock_outlined,
+                    color: _withOpacity(AppTheme.white, 0.8)),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePassword
@@ -159,37 +144,60 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                     color: _withOpacity(AppTheme.white, 0.8),
                   ),
                   onPressed: !_isLoading
-                      ? () {
-                          setState(() => _obscurePassword = !_obscurePassword);
-                        }
+                      ? () => setState(
+                          () => _obscurePassword = !_obscurePassword)
                       : null,
                 ),
                 filled: true,
                 fillColor: _withOpacity(AppTheme.white, 0.1),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: _withOpacity(AppTheme.white, 0.3),
-                  ),
+                  borderSide:
+                      BorderSide(color: _withOpacity(AppTheme.white, 0.3)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: _withOpacity(AppTheme.white, 0.3),
-                  ),
+                  borderSide:
+                      BorderSide(color: _withOpacity(AppTheme.white, 0.3)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(color: AppTheme.white, width: 2),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 12,
-                ),
+                    vertical: 16, horizontal: 12),
               ),
             ),
+
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withAlpha(40),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.red.withAlpha(100)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline,
+                        color: Colors.redAccent, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(
+                            color: Colors.redAccent, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             const SizedBox(height: 24),
-            // Botón de login
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -202,7 +210,8 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 4,
-                  disabledBackgroundColor: _withOpacity(AppTheme.white, 0.6),
+                  disabledBackgroundColor:
+                      _withOpacity(AppTheme.white, 0.6),
                 ),
                 child: _isLoading
                     ? SizedBox(
@@ -217,7 +226,7 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                       )
                     : Text(
                         'Entrar como ${widget.accessModeLabel}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryBlue,
@@ -225,8 +234,6 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                       ),
               ),
             ),
-            // Nota: El registro no está disponible. Solo usuarios con correo institucional
-            // de la Universidad Tecnológica de Bolívar pueden acceder a la aplicación.
           ],
         ),
       ),

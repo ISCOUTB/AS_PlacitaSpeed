@@ -1,12 +1,10 @@
 import { IsEmail, IsNotEmpty, IsNumber, IsPositive } from 'class-validator';
 
-export class CreateUserDto {
+export class CreateRechargeDto {
     @IsEmail()
     @IsNotEmpty()
-    email: string;
-}
+    userEmail: string;
 
-export class UpdateBalanceDto {
     @IsNumber()
     @IsPositive()
     value: number;

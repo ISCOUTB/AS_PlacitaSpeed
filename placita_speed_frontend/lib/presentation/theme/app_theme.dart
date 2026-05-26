@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Colores principales de Placita Speed
   static const Color primaryBlue = Color(0xFF0052CC);
   static const Color darkBlue = Color(0xFF003399);
   static const Color lightBlue = Color(0xFF3366FF);
@@ -22,7 +21,6 @@ class AppTheme {
     ),
   );
 
-  // Estilos de texto reutilizables
   static const TextStyle titleStyle = TextStyle(
     fontSize: 28,
     fontWeight: FontWeight.bold,

@@ -1,6 +1,3 @@
-placita speed 
-
-user entity ts 
 import { Entity, Column, PrimaryColumn, OneToMany } from "typeorm";
 import { Recharge } from "src/recharges/recharge.entity";
 import { Ticket } from "src/tickets/ticket.entity";
