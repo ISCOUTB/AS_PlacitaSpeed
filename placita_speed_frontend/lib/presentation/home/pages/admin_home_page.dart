@@ -56,9 +56,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
     });
   }
 
-  void _markOrderDelivered(int index) {
+  void _toggleOrderStatus(int index) {
     setState(() {
-      _orders[index].status = 'Entregado';
+      _orders[index].status = _orders[index].status == 'Entregado'
+          ? 'Pendiente'
+          : 'Entregado';
     });
   }
 
@@ -110,7 +112,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                         accentColor: Color(0xFFF59E0B),
                       ),
                       _SummaryCard(
-                        title: 'Verificados hoy',
+                        title: 'Entregados hoy',
                         value: '1',
                         icon: Icons.verified_outlined,
                         accentColor: Color(0xFF10B981),
@@ -168,9 +170,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     final order = _orders[index];
                     return _OrderCard(
                       order: order,
-                      onDeliver: order.status == 'Entregado'
-                          ? null
-                          : () => _markOrderDelivered(index),
+                      onToggle: () => _toggleOrderStatus(index),
                     );
                   },
                 ),
@@ -265,6 +265,17 @@ class _AdminHeader extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(width: 12),
+          // Botón para cerrar sesión y volver a la pantalla de login
+          Material(
+            color: Colors.white.withAlpha(24),
+            shape: const CircleBorder(),
+            child: IconButton(
+              onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+              icon: const Icon(Icons.logout, color: Colors.white),
+              tooltip: 'Cerrar sesión',
+            ),
           ),
         ],
       ),
@@ -443,9 +454,9 @@ class _InventoryControlCard extends StatelessWidget {
 
 class _OrderCard extends StatelessWidget {
   final _OrderItem order;
-  final VoidCallback? onDeliver;
+  final VoidCallback? onToggle;
 
-  const _OrderCard({required this.order, required this.onDeliver});
+  const _OrderCard({required this.order, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -527,7 +538,7 @@ class _OrderCard extends StatelessWidget {
               SizedBox(
                 height: 36,
                 child: ElevatedButton(
-                  onPressed: onDeliver,
+                  onPressed: onToggle,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isDelivered
                         ? const Color(0xFFE2E8F0)
@@ -540,7 +551,7 @@ class _OrderCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(isDelivered ? 'Entregado' : 'Entregar'),
+                  child: Text(isDelivered ? 'Marcar pendiente' : 'Entregar'),
                 ),
               ),
             ],
