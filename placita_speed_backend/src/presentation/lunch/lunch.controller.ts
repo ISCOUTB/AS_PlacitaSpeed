@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConsultLunchesService } from '@application/lunch/consult-lunches.service';
 
-@Controller('api/lunch')
+@Controller('api/lunches')
 export class LunchController {
   constructor(private readonly consultLunches: ConsultLunchesService) {}
 

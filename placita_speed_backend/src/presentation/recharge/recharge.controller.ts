@@ -14,15 +14,15 @@ import { BuyCreditsDto } from '../DTOs/recharge.dto';
 import { BuyCreditsService } from '@application/recharge/buy-credits.service';
 import { ConsultRechargesByUserService } from '@application/recharge/consult-recharges-by-user.service';
 
-@Controller('api/recharge')
+@Controller('api/recharges')
 export class RechargeController {
   constructor(
     private readonly buyCredits: BuyCreditsService,
     private readonly consultRechargesByUser: ConsultRechargesByUserService
   ) {}
 
-  /**
-   * GET /api/recharge
+  /**sudo apt  install docker-compose
+   * GET /api/recharges
    * Retorna la lista de recargas del usuario autenticado.
    */
   @UseGuards(JwtGuard)
@@ -36,7 +36,7 @@ export class RechargeController {
   }
 
   /**
-   * POST /api/recharge/buy
+   * POST /api/recharges/buy
    * Recarga saldo virtual del usuario autenticado.
    * Body: { value: number }
    */

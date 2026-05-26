@@ -16,7 +16,7 @@ import { ConsultTicketsByUserService } from '@application/ticket/consult-tickets
 import { CreateTicketService } from '@application/ticket/create-ticket.service';
 import { ValidateTicketService } from '@application/ticket/validate-ticket.service';
 
-@Controller('api/ticket')
+@Controller('api/tickets')
 export class TicketController {
   constructor(
     private readonly consultTicketsByUser: ConsultTicketsByUserService,
@@ -25,7 +25,7 @@ export class TicketController {
   ) {}
 
   /**
-   * GET /api/ticket
+   * GET /api/tickets
    * Retorna la lista de tickets comprados por el usuario autenticado.
    */
   @UseGuards(JwtGuard)
@@ -39,7 +39,7 @@ export class TicketController {
   }
 
   /**
-   * POST /api/ticket/buy
+   * POST /api/tickets/buy
    * Crea un ticket para el almuerzo indicado.
    * Descuenta el precio virtual del saldo del usuario autenticado.
    * Body: { lunch_id: number }
@@ -58,7 +58,7 @@ export class TicketController {
   // ─── Validación de ticket (solo ADMIN) ───────────────────────────────────
 
   /**
-   * POST /api/ticket/validate/:ticket_id
+   * POST /api/tickets/validate/:ticket_id
    * Marca un ticket como USED. Solo accesible por usuarios con rol ADMIN.
    */
   @UseGuards(JwtGuard)

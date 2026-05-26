@@ -18,7 +18,7 @@ import { CreateUserService } from '@application/user/create-user.service';
 import { LogoutUserService } from '@application/user/logout-user.service';
 
 
-@Controller('api/user')
+@Controller('api/users')
 export class UserController {
   constructor(
     private readonly autenticate: AutenticateUserService,
@@ -30,7 +30,7 @@ export class UserController {
   // ─── Autenticación ───────────────────────────────────────────────────────
 
   /**
-   * POST /api/user/login
+   * POST /api/users/login
    * Recibe email y contraseña. Retorna un JWT si las credenciales son válidas.
    * También actualiza el campo last_access del usuario.
    */
@@ -46,7 +46,7 @@ export class UserController {
   }
 
   /**
-   * POST /api/user/register
+   * POST /api/users/register
    * Crea un nuevo usuario con email, contraseña y rol.
    */
   @Post('register')
@@ -61,7 +61,7 @@ export class UserController {
   }
 
   /**
-   * POST /api/user/logout
+   * POST /api/users/logout
    * Cierra la sesión del usuario autenticado.
    * Con JWT stateless, el cliente debe eliminar el token.
    */
@@ -80,7 +80,7 @@ export class UserController {
   // ─── Datos del usuario autenticado ───────────────────────────────────────
 
   /**
-   * GET /api/user/me
+   * GET /api/users/me
    * Retorna los datos básicos del usuario autenticado (sin contraseña).
    */
   @UseGuards(JwtGuard)
