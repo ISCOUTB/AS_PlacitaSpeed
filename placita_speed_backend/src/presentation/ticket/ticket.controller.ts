@@ -14,7 +14,7 @@ import { JwtGuard } from '../jwt.guard';
 import { CreateTicketDto, ValidateTicketDto } from '../DTOs/ticket.dto';
 import { ConsultTicketsByUserService } from '@application/ticket/consult-tickets-by-user.service';
 import { CreateTicketService } from '@application/ticket/create-ticket.service';
-import { ValidateTicketService } from '@application/user/validate-ticket.service';
+import { ValidateTicketService } from '@application/ticket/validate-ticket.service';
 
 @Controller('api/ticket')
 export class TicketController {

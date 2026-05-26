@@ -11,7 +11,6 @@ import { AutenticateUserService } from '@application/user/autenticate-user.servi
 import { ConsultUserDataService } from '@application/user/consult-user-data.service';
 import { CreateUserService } from '@application/user/create-user.service';
 import { LogoutUserService } from '@application/user/logout-user.service';
-import { ValidateTicketService } from '@application/user/validate-ticket.service';
 import { LunchTypeormRepository } from '@infrastructure/typeorm/lunch/lunch-typeorm.repository';
 
 @Module({

@@ -18,7 +18,7 @@ import { ConsultRechargesByUserService } from '@application/recharge/consult-rec
 export class RechargeController {
   constructor(
     private readonly buyCredits: BuyCreditsService,
-    private readonly consultRechargeByUser: ConsultRechargesByUserService
+    private readonly consultRechargesByUser: ConsultRechargesByUserService
   ) {}
 
   /**
@@ -29,7 +29,7 @@ export class RechargeController {
   @Get()
   async getUserRecharges(@Request() req) {
     try {
-      return await this.consultRechargeByUser.execute(req.user.email);
+      return await this.consultRechargesByUser.execute(req.user.email);
     } catch (e: any) {
       throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
