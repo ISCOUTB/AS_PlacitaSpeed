@@ -7,7 +7,7 @@ import 'package:placita_speed_frontend/infrastructure/services/auth_token.dart';
 
 class ApiService {
   static final _client = http.Client();
-  static final _base = Uri.parse(ApiConfig.baseUrl);
+  static Uri get _base => Uri.parse(ApiConfig.baseUrl);
 
   static Map<String, String> _headers({bool auth = false}) {
     final headers = <String, String>{'Content-Type': 'application/json'};
@@ -74,10 +74,7 @@ class ApiService {
 
   static Future<List<LunchEntity>> getLunches() async {
     final response = await _client
-        .get(
-          _base.replace(path: '/api/lunches'),
-          headers: _headers(),
-        )
+        .get(_base.replace(path: '/api/lunches'), headers: _headers())
         .timeout(const Duration(seconds: 10));
 
     final body = jsonDecode(response.body);
@@ -111,10 +108,7 @@ class ApiService {
 
   static Future<List<TicketEntity>> getTickets() async {
     final response = await _client
-        .get(
-          _base.replace(path: '/api/tickets'),
-          headers: _headers(auth: true),
-        )
+        .get(_base.replace(path: '/api/tickets'), headers: _headers(auth: true))
         .timeout(const Duration(seconds: 10));
 
     final body = jsonDecode(response.body);

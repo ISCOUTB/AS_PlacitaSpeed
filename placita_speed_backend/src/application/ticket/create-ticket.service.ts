@@ -21,6 +21,10 @@ export class CreateTicketService {
       throw new Error('Almuerzo no encontrado');
     }
 
+    if (lunch.stock <= 0) {
+      throw new Error('Almuerzo agotado');
+    }
+
     // Obtener usuario y validar saldo
     const user = await this.userRepository.findByEmail(email);
     if (!user) {
@@ -36,6 +40,10 @@ export class CreateTicketService {
     // Descontar saldo
     user.virtual_balance -= lunch.virtual_price;
     await this.userRepository.update(user);
+
+    // Reducir stock
+    lunch.stock -= 1;
+    await this.lunchRepository.update(lunch);
 
     // Crear ticket
     const ticket = new Ticket();

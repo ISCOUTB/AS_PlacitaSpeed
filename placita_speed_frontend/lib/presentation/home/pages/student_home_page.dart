@@ -50,7 +50,10 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
     final total = _lunches.fold<int>(0, (s, e) => s + e.stock);
     return [
-      _InventoryItem(name: 'Almuerzos del día', units: '$total unidades disponibles'),
+      _InventoryItem(
+        name: 'Almuerzos del día',
+        units: '$total unidades disponibles',
+      ),
       _InventoryItem(name: 'Complementos', units: '0 unidades disponibles'),
       _InventoryItem(name: 'Bebidas', units: '0 unidades disponibles'),
     ];
@@ -67,9 +70,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
   List<_WeeklyMenuItem> get _weeklyMenu {
     if (_lunches.isEmpty) {
-      return const [
-        _WeeklyMenuItem(day: 'Cargando...', lunch: '', price: ''),
-      ];
+      return const [_WeeklyMenuItem(day: 'Cargando...', lunch: '', price: '')];
     }
 
     return _lunches.asMap().entries.map((entry) {
@@ -82,9 +83,10 @@ class _StudentHomePageState extends State<StudentHomePage> {
           );
       return _WeeklyMenuItem(
         day: 'Opción ${entry.key + 1}',
-        lunch: lunch.description.isNotEmpty
-            ? '${lunch.name}: ${lunch.description}'
-            : lunch.name,
+        lunch:
+            lunch.description.isNotEmpty
+                ? '${lunch.name}: ${lunch.description}'
+                : lunch.name,
         price: price,
       );
     }).toList();
@@ -131,9 +133,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
           _balance -= _lunches.isNotEmpty ? _lunches.first.virtualPrice : 0;
         });
       }
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => TicketPage(ticket: ticket)),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => TicketPage(ticket: ticket)));
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -267,8 +269,8 @@ class _OverviewSection extends StatelessWidget {
           sliver: SliverList.separated(
             itemCount: weeklyMenu.length,
             separatorBuilder: (_, __) => const SizedBox(height: 14),
-            itemBuilder: (context, index) =>
-              _WeeklyMenuCard(item: weeklyMenu[index]),
+            itemBuilder:
+                (context, index) => _WeeklyMenuCard(item: weeklyMenu[index]),
           ),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 96)),
@@ -299,17 +301,19 @@ class _OrderSection extends StatelessWidget {
     final firstLunch = lunches.isNotEmpty ? lunches.first : null;
     final lunchTitle = firstLunch?.name ?? 'Cargando menú...';
     final lunchSubtitle = firstLunch?.description ?? 'Espera un momento';
-    final lunchPrice = firstLunch != null
-        ? firstLunch.virtualPrice
-            .toStringAsFixed(0)
-            .replaceAllMapped(
-              RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-              (m) => '${m[1]}.',
-            )
-        : '—';
-    final lunchStock = firstLunch != null
-        ? '${firstLunch.stock} unidades disponibles'
-        : 'Sin disponibilidad';
+    final lunchPrice =
+        firstLunch != null
+            ? firstLunch.virtualPrice
+                .toStringAsFixed(0)
+                .replaceAllMapped(
+                  RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                  (m) => '${m[1]}.',
+                )
+            : '—';
+    final lunchStock =
+        firstLunch != null
+            ? '${firstLunch.stock} unidades disponibles'
+            : 'Sin disponibilidad';
 
     return CustomScrollView(
       slivers: [
@@ -368,8 +372,8 @@ class _OrderSection extends StatelessWidget {
           sliver: SliverList.separated(
             itemCount: inventory.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) =>
-                _InventoryCard(item: inventory[index]),
+            itemBuilder:
+                (context, index) => _InventoryCard(item: inventory[index]),
           ),
         ),
         SliverPadding(
@@ -387,8 +391,8 @@ class _OrderSection extends StatelessWidget {
           sliver: SliverList.separated(
             itemCount: timeline.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) =>
-                _TimelineCard(item: timeline[index]),
+            itemBuilder:
+                (context, index) => _TimelineCard(item: timeline[index]),
           ),
         ),
       ],
@@ -425,10 +429,7 @@ class _ProfileSection extends StatelessWidget {
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
           sliver: SliverToBoxAdapter(
-            child: _ProfileSummaryCard(
-              name: userEmail,
-              balance: balance,
-            ),
+            child: _ProfileSummaryCard(name: userEmail, balance: balance),
           ),
         ),
         SliverPadding(
@@ -623,7 +624,7 @@ class _BalanceCard extends StatelessWidget {
               color: AppTheme.primaryBlue,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -635,7 +636,7 @@ class _BalanceCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   balance,
                   style: const TextStyle(
@@ -887,7 +888,10 @@ class _OrderSummaryCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.white.withAlpha(34),
                   borderRadius: BorderRadius.circular(999),
@@ -1055,16 +1059,17 @@ class _DailyMenuCardState extends State<_DailyMenuCard> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: _isOrdering
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Ordenar ahora'),
+                  child:
+                      _isOrdering
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Text('Ordenar ahora'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1102,7 +1107,7 @@ class _QuickActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       decoration: BoxDecoration(
         color: AppTheme.white,
         borderRadius: BorderRadius.circular(20),
@@ -1202,18 +1207,16 @@ class _TimelineCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = item.highlighted
-        ? AppTheme.primaryBlue
-        : AppTheme.textGray;
+    final accentColor =
+        item.highlighted ? AppTheme.primaryBlue : AppTheme.textGray;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: item.highlighted ? const Color(0xFFF0F3FF) : AppTheme.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: item.highlighted
-              ? AppTheme.primaryBlue
-              : const Color(0xFFE3E7F3),
+          color:
+              item.highlighted ? AppTheme.primaryBlue : const Color(0xFFE3E7F3),
           width: item.highlighted ? 1.5 : 1,
         ),
       ),
@@ -1286,10 +1289,7 @@ class _ProfileSummaryCard extends StatelessWidget {
   final String name;
   final String balance;
 
-  const _ProfileSummaryCard({
-    required this.name,
-    required this.balance,
-  });
+  const _ProfileSummaryCard({required this.name, required this.balance});
 
   @override
   Widget build(BuildContext context) {
@@ -1552,7 +1552,10 @@ class _StudentDrawer extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           userEmail,
-                          style: const TextStyle(color: AppTheme.white, fontSize: 13),
+                          style: const TextStyle(
+                            color: AppTheme.white,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -1616,7 +1619,8 @@ class _DrawerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive ? const Color(0xFFC0392B) : const Color(0xFF1B1B1B);
+    final color =
+        destructive ? const Color(0xFFC0392B) : const Color(0xFF1B1B1B);
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(
