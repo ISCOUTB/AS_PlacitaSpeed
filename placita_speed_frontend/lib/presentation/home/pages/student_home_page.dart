@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:placita_speed_frontend/config/app_config.dart';
 import 'package:placita_speed_frontend/domain/entities/lunch_entity.dart';
 import 'package:placita_speed_frontend/domain/entities/user_entity.dart';
 import 'package:placita_speed_frontend/infrastructure/services/api_service.dart';
@@ -21,12 +22,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
   List<LunchEntity> _lunches = [];
   double _balance = 0;
 
-  final List<_InventoryItem> _todayInventory = const [
-    _InventoryItem(name: 'Almuerzos del día', units: '22 unidades disponibles'),
-    _InventoryItem(name: 'Complementos', units: '14 unidades disponibles'),
-    _InventoryItem(name: 'Bebidas', units: '22 unidades disponibles'),
-  ];
-
   final List<_TimelineItem> _todayTimeline = const [
     _TimelineItem(
       time: '08:00',
@@ -48,22 +43,16 @@ class _StudentHomePageState extends State<StudentHomePage> {
     ),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _balance = widget.user.virtualBalance;
-    _loadLunches();
-  }
-
-  Future<void> _loadLunches() async {
-    try {
-      final lunches = await ApiService.getLunches();
-      if (mounted) setState(() => _lunches = lunches);
-    } catch (_) {}
-  }
-
-  Future<void> _refresh() async {
-    await _loadLunches();
+  List<_InventoryItem> get _todayInventory {
+    if (_lunches.isEmpty) {
+      return [_InventoryItem(name: 'Almuerzos del día', units: 'Cargando...')];
+    }
+    final total = _lunches.fold<int>(0, (s, e) => s + e.stock);
+    return [
+      _InventoryItem(name: 'Almuerzos del día', units: '$total unidades disponibles'),
+      _InventoryItem(name: 'Complementos', units: '0 unidades disponibles'),
+      _InventoryItem(name: 'Bebidas', units: '0 unidades disponibles'),
+    ];
   }
 
   String get _formattedBalance {
@@ -99,10 +88,35 @@ class _StudentHomePageState extends State<StudentHomePage> {
     }).toList();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _balance = widget.user.virtualBalance;
+    _loadLunches();
+  }
+
+  Future<void> _loadLunches() async {
+    try {
+      final lunches = await ApiService.getLunches();
+      if (mounted) setState(() => _lunches = lunches);
+    } catch (_) {}
+  }
+
+  Future<void> _refresh() async {
+    await _loadLunches();
+  }
+
   void _onNavTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  void _onDrawerTabSelected(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    Navigator.of(context).pop();
   }
 
   Future<void> _handleOrder(BuildContext context) async {
@@ -133,7 +147,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
     _scaffoldKey.currentState?.openDrawer();
   }
 
-  void _logout(BuildContext context) {
+  Future<void> _logout(BuildContext context) async {
+    await AppConfig().authRepository.logout();
+    if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginPage()),
       (route) => false,
@@ -146,6 +162,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
       key: _scaffoldKey,
       drawer: _StudentDrawer(
         userEmail: widget.user.email,
+        onHomeTap: () => _onDrawerTabSelected(0),
+        onOrderTap: () => _onDrawerTabSelected(1),
+        onProfileTap: () => _onDrawerTabSelected(2),
         onHelpTap: () {},
         onSettingsTap: () {},
         onLogoutTap: () => _logout(context),
@@ -247,7 +266,7 @@ class _OverviewSection extends StatelessWidget {
             itemCount: weeklyMenu.length,
             separatorBuilder: (_, __) => const SizedBox(height: 14),
             itemBuilder: (context, index) =>
-                _WeeklyMenuCard(item: weeklyMenu[index]),
+              _WeeklyMenuCard(item: weeklyMenu[index]),
           ),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 96)),
@@ -866,10 +885,7 @@ class _OrderSummaryCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: AppTheme.white.withAlpha(34),
                   borderRadius: BorderRadius.circular(999),
@@ -1324,41 +1340,6 @@ class _ProfileSummaryCard extends StatelessWidget {
   }
 }
 
-class _ProfileDataRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _ProfileDataRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: AppTheme.textGray.withAlpha(220),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: Color(0xFF1B1B1B),
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _ProfileMetricTile extends StatelessWidget {
   final String title;
   final String value;
@@ -1503,12 +1484,18 @@ class _BottomNavItem extends StatelessWidget {
 
 class _StudentDrawer extends StatelessWidget {
   final String userEmail;
+  final VoidCallback onHomeTap;
+  final VoidCallback onOrderTap;
+  final VoidCallback onProfileTap;
   final VoidCallback onHelpTap;
   final VoidCallback onSettingsTap;
   final VoidCallback onLogoutTap;
 
   const _StudentDrawer({
     required this.userEmail,
+    required this.onHomeTap,
+    required this.onOrderTap,
+    required this.onProfileTap,
     required this.onHelpTap,
     required this.onSettingsTap,
     required this.onLogoutTap,
@@ -1573,19 +1560,18 @@ class _StudentDrawer extends StatelessWidget {
             _DrawerItem(
               icon: Icons.home_outlined,
               label: 'Inicio',
-              onTap: () {},
+              onTap: onHomeTap,
             ),
             _DrawerItem(
               icon: Icons.calendar_month_outlined,
               label: 'Ordenar',
-              onTap: () {},
+              onTap: onOrderTap,
             ),
             _DrawerItem(
               icon: Icons.person_outline_rounded,
               label: 'Perfil',
-              onTap: () {},
+              onTap: onProfileTap,
             ),
-            const Divider(height: 1),
             _DrawerItem(
               icon: Icons.help_outline_rounded,
               label: 'Ayuda',
@@ -1596,6 +1582,7 @@ class _StudentDrawer extends StatelessWidget {
               label: 'Configuración',
               onTap: onSettingsTap,
             ),
+            const Divider(height: 1),
             _DrawerItem(
               icon: Icons.logout_rounded,
               label: 'Cerrar sesión',
@@ -1625,19 +1612,14 @@ class _DrawerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive
-        ? const Color(0xFFC0392B)
-        : const Color(0xFF1B1B1B);
+    final color = destructive ? const Color(0xFFC0392B) : const Color(0xFF1B1B1B);
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(
         label,
         style: TextStyle(color: color, fontWeight: FontWeight.w700),
       ),
-      onTap: () {
-        Navigator.of(context).pop();
-        onTap();
-      },
+      onTap: onTap,
     );
   }
 }

@@ -17,11 +17,11 @@ class LunchEntity extends Equatable {
 
   factory LunchEntity.fromJson(Map<String, dynamic> json) {
     return LunchEntity(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      description: json['description'] as String,
-      virtualPrice: double.parse(json['virtual_price'].toString()),
-      stock: json['stock'] as int,
+      id: json['id'] is int ? json['id'] as int : int.tryParse(json['id'].toString()) ?? 0,
+      name: (json['name'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
+      virtualPrice: double.tryParse((json['virtual_price'] ?? json['virtualPrice'] ?? 0).toString()) ?? 0.0,
+      stock: (json['stock'] is int) ? json['stock'] as int : int.tryParse((json['stock'] ?? '0').toString()) ?? 0,
     );
   }
 
