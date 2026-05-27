@@ -39,6 +39,20 @@ export class TicketController {
   }
 
   /**
+   * GET /api/tickets/:ticket_id
+   * Retorna el detalle de un ticket específico.
+   */
+  @UseGuards(JwtGuard)
+  @Get(':ticket_id')
+  async getTicket(@Param('ticket_id') ticketId: string) {
+    try {
+      return await this.consultTicketsByUser.executeById(ticketId);
+    } catch (e: any) {
+      throw new HttpException(e.message, HttpStatus.NOT_FOUND);
+    }
+  }
+
+  /**
    * POST /api/tickets/buy
    * Crea un ticket para el almuerzo indicado.
    * Descuenta el precio virtual del saldo del usuario autenticado.

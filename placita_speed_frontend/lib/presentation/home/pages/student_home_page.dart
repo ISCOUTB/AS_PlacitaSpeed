@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:placita_speed_frontend/config/app_config.dart';
 import 'package:placita_speed_frontend/infrastructure/services/api_service.dart';
 import 'package:placita_speed_frontend/presentation/login/pages/login_page.dart';
 import 'package:placita_speed_frontend/presentation/ticket/pages/ticket_page.dart';
@@ -15,39 +16,81 @@ class _StudentHomePageState extends State<StudentHomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
 
-  final List<_WeeklyMenuItem> _weeklyMenu = const [
-    _WeeklyMenuItem(
-      day: 'Lunes',
-      lunch: 'Pollo al horno, arroz y ensalada',
-      price: '12.000',
-    ),
-    _WeeklyMenuItem(
-      day: 'Martes',
-      lunch: 'Carne en salsa, puré y jugo natural',
-      price: '12.000',
-    ),
-    _WeeklyMenuItem(
-      day: 'Miércoles',
-      lunch: 'Pasta gratinada con proteína',
-      price: '11.500',
-    ),
-    _WeeklyMenuItem(
-      day: 'Jueves',
-      lunch: 'Arroz paisa con ensalada fresca',
-      price: '12.500',
-    ),
-    _WeeklyMenuItem(
-      day: 'Viernes',
-      lunch: 'Filete de pollo, arroz y frutas',
-      price: '13.000',
-    ),
-  ];
+  List<_WeeklyMenuItem> _weeklyMenu = [];
+  List<_InventoryItem> _todayInventory = [];
+  String _userName = 'Usuario';
+  String _balance = '0';
+  String _dailyTitle = 'Menú del día';
+  String _dailySubtitle = '';
+  String _dailyPrice = '';
 
-  final List<_InventoryItem> _todayInventory = const [
-    _InventoryItem(name: 'Almuerzos del día', units: '22 unidades disponibles'),
-    _InventoryItem(name: 'Complementos', units: '14 unidades disponibles'),
-    _InventoryItem(name: 'Bebidas', units: '22 unidades disponibles'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final user = await AppConfig().authRepository.getCurrentUser();
+      if (user != null) {
+        setState(() {
+          _userName = user.name;
+          _balance = _formatCurrency(user.virtualBalance);
+        });
+      }
+
+      final lunches = await ApiService.getLunches();
+
+      // Build weekly menu from available lunches (take up to 5)
+      final days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+      final weekly = <_WeeklyMenuItem>[];
+      for (var i = 0; i < lunches.length && i < 5; i++) {
+        final l = lunches[i];
+        weekly.add(_WeeklyMenuItem(
+          day: days[i],
+          lunch: l.name + (l.description.isNotEmpty ? '\n${l.description}' : ''),
+          price: _formatCurrency(l.virtualPrice),
+        ));
+      }
+
+      // Daily menu: use first lunch if exists
+      if (lunches.isNotEmpty) {
+        final d = lunches.first;
+        _dailyTitle = d.name;
+        _dailySubtitle = d.description;
+        _dailyPrice = _formatCurrency(d.virtualPrice);
+      }
+
+      final totalLunchStock = lunches.fold<int>(0, (s, e) => s + e.stock);
+
+      setState(() {
+        _weeklyMenu = weekly;
+        _todayInventory = [
+          _InventoryItem(name: 'Almuerzos del día', units: '$totalLunchStock unidades disponibles'),
+          _InventoryItem(name: 'Complementos', units: '0 unidades disponibles'),
+          _InventoryItem(name: 'Bebidas', units: '0 unidades disponibles'),
+        ];
+      });
+    } catch (e) {
+      // Silently fail; mantenemos valores por defecto
+    }
+  }
+
+  String _formatCurrency(double value) {
+    final intVal = value.round();
+    final s = intVal.toString();
+    var result = '';
+    var count = 0;
+    for (var i = s.length - 1; i >= 0; i--) {
+      result = s[i] + result;
+      count++;
+      if (count % 3 == 0 && i != 0) {
+        result = '.' + result;
+      }
+    }
+    return result;
+  }
 
   final List<_TimelineItem> _todayTimeline = const [
     _TimelineItem(
@@ -76,10 +119,16 @@ class _StudentHomePageState extends State<StudentHomePage> {
     });
   }
 
+  void _onDrawerTabSelected(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    Navigator.of(context).pop();
+  }
+
   Future<void> _handleOrder(BuildContext context) async {
     try {
       final ticket = await ApiService.createTicket(
-        userEmail: 'estudiante@utb.edu.co',
         lunchId: 1,
       );
       if (!context.mounted) return;
@@ -101,7 +150,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
     _scaffoldKey.currentState?.openDrawer();
   }
 
-  void _logout(BuildContext context) {
+  Future<void> _logout(BuildContext context) async {
+    await AppConfig().authRepository.logout();
+    if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginPage()),
       (route) => false,
@@ -113,8 +164,11 @@ class _StudentHomePageState extends State<StudentHomePage> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: _StudentDrawer(
-        onHelpTap: () {},
-        onSettingsTap: () {},
+        onHomeTap: () => _onDrawerTabSelected(0),
+        onOrderTap: () => _onDrawerTabSelected(1),
+        onProfileTap: () => _onDrawerTabSelected(2),
+        onHelpTap: () => _onDrawerTabSelected(2),
+        onSettingsTap: () => _onDrawerTabSelected(2),
         onLogoutTap: () => _logout(context),
       ),
       backgroundColor: const Color(0xFFF5F7FB),
@@ -135,16 +189,24 @@ class _StudentHomePageState extends State<StudentHomePage> {
                 weeklyMenu: _weeklyMenu,
                 onMenuTap: _openDrawer,
                 onLogout: () => _logout(context),
+                userName: _userName,
+                balance: _balance,
               ),
               _OrderSection(
                 timeline: _todayTimeline,
                 inventory: _todayInventory,
                 onMenuTap: _openDrawer,
                 onOrder: _handleOrder,
+                balance: _balance,
+                dailyTitle: _dailyTitle,
+                dailySubtitle: _dailySubtitle,
+                dailyPrice: _dailyPrice,
               ),
               _ProfileSection(
                 onMenuTap: _openDrawer,
                 onLogout: () => _logout(context),
+                name: _userName,
+                balance: _balance,
               ),
             ],
           ),
@@ -162,11 +224,15 @@ class _OverviewSection extends StatelessWidget {
   final List<_WeeklyMenuItem> weeklyMenu;
   final VoidCallback onMenuTap;
   final VoidCallback onLogout;
+  final String userName;
+  final String balance;
 
   const _OverviewSection({
     required this.weeklyMenu,
     required this.onMenuTap,
     required this.onLogout,
+    required this.userName,
+    required this.balance,
   });
 
   @override
@@ -174,17 +240,17 @@ class _OverviewSection extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
-          child: _StudentHeader(
-            title: 'Hola, Fabian',
+              child: _StudentHeader(
+              title: 'Hola, $userName',
             subtitle: 'Consulta tu menú semanal y el inventario del día',
             actionIcon: Icons.menu_rounded,
             onActionTap: onMenuTap,
           ),
         ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-          sliver: SliverToBoxAdapter(child: _BalanceCard(balance: '48.500')),
-        ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+            sliver: SliverToBoxAdapter(child: _BalanceCard(balance: balance)),
+          ),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           sliver: SliverToBoxAdapter(
@@ -201,7 +267,7 @@ class _OverviewSection extends StatelessWidget {
             itemCount: weeklyMenu.length,
             separatorBuilder: (_, __) => const SizedBox(height: 14),
             itemBuilder: (context, index) =>
-                _WeeklyMenuCard(item: weeklyMenu[index]),
+              _WeeklyMenuCard(item: weeklyMenu[index]),
           ),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 96)),
@@ -215,12 +281,20 @@ class _OrderSection extends StatelessWidget {
   final List<_InventoryItem> inventory;
   final VoidCallback onMenuTap;
   final Future<void> Function(BuildContext) onOrder;
+  final String balance;
+  final String dailyTitle;
+  final String dailySubtitle;
+  final String dailyPrice;
 
   const _OrderSection({
     required this.timeline,
     required this.inventory,
     required this.onMenuTap,
     required this.onOrder,
+    required this.balance,
+    required this.dailyTitle,
+    required this.dailySubtitle,
+    required this.dailyPrice,
   });
 
   @override
@@ -241,7 +315,7 @@ class _OrderSection extends StatelessWidget {
             child: _OrderSummaryCard(
               title: 'Menú del día',
               description: 'Solo se muestra el inventario del día actual.',
-              balance: '48.500',
+              balance: balance,
             ),
           ),
         ),
@@ -259,9 +333,9 @@ class _OrderSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
           sliver: SliverToBoxAdapter(
             child: _DailyMenuCard(
-              title: 'Pollo a la plancha con arroz y ensalada',
-              subtitle: 'Incluye bebida del día y postre de frutas',
-              price: '12.000',
+              title: dailyTitle,
+              subtitle: dailySubtitle,
+              price: dailyPrice.isNotEmpty ? dailyPrice : '0',
               availability: 'Inventario del día actual',
               onOrder: onOrder,
             ),
@@ -313,8 +387,10 @@ class _OrderSection extends StatelessWidget {
 class _ProfileSection extends StatelessWidget {
   final VoidCallback onMenuTap;
   final VoidCallback onLogout;
+  final String name;
+  final String balance;
 
-  const _ProfileSection({required this.onMenuTap, required this.onLogout});
+  const _ProfileSection({required this.onMenuTap, required this.onLogout, required this.name, required this.balance});
 
   @override
   Widget build(BuildContext context) {
@@ -333,8 +409,8 @@ class _ProfileSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
           sliver: SliverToBoxAdapter(
             child: _ProfileSummaryCard(
-              name: 'Fabian Andres Granados Moron',
-              balance: '48.500',
+              name: name,
+              balance: balance,
             ),
           ),
         ),
@@ -1252,41 +1328,6 @@ class _ProfileSummaryCard extends StatelessWidget {
   }
 }
 
-class _ProfileDataRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _ProfileDataRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: AppTheme.textGray.withAlpha(220),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: Color(0xFF1B1B1B),
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _ProfileMetricTile extends StatelessWidget {
   final String title;
   final String value;
@@ -1430,11 +1471,17 @@ class _BottomNavItem extends StatelessWidget {
 }
 
 class _StudentDrawer extends StatelessWidget {
+  final VoidCallback onHomeTap;
+  final VoidCallback onOrderTap;
+  final VoidCallback onProfileTap;
   final VoidCallback onHelpTap;
   final VoidCallback onSettingsTap;
   final VoidCallback onLogoutTap;
 
   const _StudentDrawer({
+    required this.onHomeTap,
+    required this.onOrderTap,
+    required this.onProfileTap,
     required this.onHelpTap,
     required this.onSettingsTap,
     required this.onLogoutTap,
@@ -1499,17 +1546,17 @@ class _StudentDrawer extends StatelessWidget {
             _DrawerItem(
               icon: Icons.home_outlined,
               label: 'Inicio',
-              onTap: () {},
+              onTap: onHomeTap,
             ),
             _DrawerItem(
               icon: Icons.calendar_month_outlined,
               label: 'Ordenar',
-              onTap: () {},
+              onTap: onOrderTap,
             ),
             _DrawerItem(
               icon: Icons.person_outline_rounded,
               label: 'Perfil',
-              onTap: () {},
+              onTap: onProfileTap,
             ),
             const Divider(height: 1),
             _DrawerItem(

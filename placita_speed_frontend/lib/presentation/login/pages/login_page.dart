@@ -42,6 +42,16 @@ class _LoginPageState extends State<LoginPage> {
   ) async {
     final user = await AppConfig().authRepository.login(email, password);
 
+    final matchesSelectedAccess = switch (_accessMode) {
+      LoginAccessMode.student => user.userType == 'student',
+      LoginAccessMode.admin => user.userType == 'admin',
+    };
+
+    if (!matchesSelectedAccess) {
+      await AppConfig().authRepository.logout();
+      throw Exception('El acceso seleccionado no coincide con tu rol');
+    }
+
     if (!context.mounted) return;
 
     final targetPage = user.userType == 'admin'

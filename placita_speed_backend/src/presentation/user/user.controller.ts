@@ -27,6 +27,11 @@ export class UserController {
     private readonly logout: LogoutUserService,
   ) {}
 
+  private sanitizeUser(user: any) {
+    const { password, ...safeUser } = user as Record<string, unknown>;
+    return safeUser;
+  }
+
   // ─── Autenticación ───────────────────────────────────────────────────────
 
   /**
@@ -54,7 +59,7 @@ export class UserController {
   async register(@Body() body: RegisterDto) {
     try {
       const user = await this.create.execute(body.email, body.password, body.role);
-      return user;
+      return this.sanitizeUser(user);
     } catch (e: any) {
       throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
     }
@@ -87,7 +92,8 @@ export class UserController {
   @Get('me')
   async getMe(@Request() req) {
     try {
-      return await this.consultData.execute(req.user.email);
+      const user = await this.consultData.execute(req.user.email);
+      return this.sanitizeUser(user);
     } catch (e: any) {
       throw new HttpException(e.message, HttpStatus.NOT_FOUND);
     }
