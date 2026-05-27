@@ -95,7 +95,7 @@ class ApiService {
 
     if (response.statusCode == 200) {
       if (body is List) {
-        return (body as List<dynamic>)
+        return body
             .map((e) => LunchEntity.fromJson(e as Map<String, dynamic>))
             .toList();
       }

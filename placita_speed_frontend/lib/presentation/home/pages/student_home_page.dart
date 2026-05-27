@@ -49,7 +49,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
         final l = lunches[i];
         weekly.add(_WeeklyMenuItem(
           day: days[i],
-          lunch: l.name + (l.description.isNotEmpty ? '\n${l.description}' : ''),
+          lunch: l.description.isNotEmpty
+              ? '${l.name}\n${l.description}'
+              : l.name,
           price: _formatCurrency(l.virtualPrice),
         ));
       }
@@ -83,10 +85,10 @@ class _StudentHomePageState extends State<StudentHomePage> {
     var result = '';
     var count = 0;
     for (var i = s.length - 1; i >= 0; i--) {
-      result = s[i] + result;
+      result = '${s[i]}$result';
       count++;
       if (count % 3 == 0 && i != 0) {
-        result = '.' + result;
+        result = '.$result';
       }
     }
     return result;

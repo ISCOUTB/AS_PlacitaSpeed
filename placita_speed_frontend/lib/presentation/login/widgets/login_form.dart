@@ -5,13 +5,14 @@ Color _withOpacity(Color color, double opacity) =>
     color.withAlpha((opacity * 255).toInt());
 
 class LoginFormWidget extends StatefulWidget {
-  final String accessModeLabel;
-  final Future<void> Function(BuildContext context, String email, String password)
-      onLoginPressed;
+  final Future<void> Function(
+    BuildContext context,
+    String email,
+    String password,
+  ) onLoginPressed;
 
   const LoginFormWidget({
     super.key,
-    required this.accessModeLabel,
     required this.onLoginPressed,
   });
 
@@ -51,10 +52,14 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
       await widget.onLoginPressed(context, email, password);
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = e.toString().replaceFirst('Exception: ', ''));
+        setState(() {
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        });
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -71,27 +76,13 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: _withOpacity(AppTheme.white, 0.12),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: _withOpacity(AppTheme.white, 0.22)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.badge_outlined, size: 16, color: AppTheme.white),
-                  const SizedBox(width: 6),
-                  Text(
-                    widget.accessModeLabel,
-                    style: const TextStyle(
-                      color: AppTheme.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+            const Text(
+              'Accede con tus credenciales institucionales',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppTheme.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 20),
@@ -103,8 +94,10 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
               decoration: InputDecoration(
                 hintText: 'Correo electrónico',
                 hintStyle: TextStyle(color: _withOpacity(AppTheme.white, 0.6)),
-                prefixIcon: Icon(Icons.email_outlined,
-                    color: _withOpacity(AppTheme.white, 0.8)),
+                prefixIcon: Icon(
+                  Icons.email_outlined,
+                  color: _withOpacity(AppTheme.white, 0.8),
+                ),
                 filled: true,
                 fillColor: _withOpacity(AppTheme.white, 0.1),
                 border: OutlineInputBorder(
@@ -122,7 +115,9 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                   borderSide: const BorderSide(color: AppTheme.white, width: 2),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    vertical: 16, horizontal: 12),
+                  vertical: 16,
+                  horizontal: 12,
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -134,8 +129,10 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
               decoration: InputDecoration(
                 hintText: 'Contraseña',
                 hintStyle: TextStyle(color: _withOpacity(AppTheme.white, 0.6)),
-                prefixIcon: Icon(Icons.lock_outlined,
-                    color: _withOpacity(AppTheme.white, 0.8)),
+                prefixIcon: Icon(
+                  Icons.lock_outlined,
+                  color: _withOpacity(AppTheme.white, 0.8),
+                ),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePassword
@@ -144,8 +141,9 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                     color: _withOpacity(AppTheme.white, 0.8),
                   ),
                   onPressed: !_isLoading
-                      ? () => setState(
-                          () => _obscurePassword = !_obscurePassword)
+                      ? () => setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          })
                       : null,
                 ),
                 filled: true,
@@ -165,16 +163,17 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                   borderSide: const BorderSide(color: AppTheme.white, width: 2),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    vertical: 16, horizontal: 12),
+                  vertical: 16,
+                  horizontal: 12,
+                ),
               ),
             ),
-
             if (_errorMessage != null) ...[
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.red.withAlpha(40),
                   borderRadius: BorderRadius.circular(10),
@@ -182,21 +181,25 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline,
-                        color: Colors.redAccent, size: 18),
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.redAccent,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _errorMessage!,
                         style: const TextStyle(
-                            color: Colors.redAccent, fontSize: 13),
+                          color: Colors.redAccent,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ],
-
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -210,8 +213,7 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 4,
-                  disabledBackgroundColor:
-                      _withOpacity(AppTheme.white, 0.6),
+                  disabledBackgroundColor: _withOpacity(AppTheme.white, 0.6),
                 ),
                 child: _isLoading
                     ? SizedBox(
@@ -224,9 +226,9 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                           ),
                         ),
                       )
-                    : Text(
-                        'Entrar como ${widget.accessModeLabel}',
-                        style: const TextStyle(
+                    : const Text(
+                        'Iniciar sesión',
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryBlue,
