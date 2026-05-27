@@ -16,8 +16,8 @@ class AuthRepositoryImpl extends AuthRepository {
       'virtualBalance': 50000.0,
     },
     {
-      'email': 'hasgope@gmail.com',
-      'password': 'admin1234',
+      'email': 'admin@utb.edu.co',
+      'password': 'admin123',
       'name': 'Administrador',
       'userType': 'admin',
       'virtualBalance': 0.0,
