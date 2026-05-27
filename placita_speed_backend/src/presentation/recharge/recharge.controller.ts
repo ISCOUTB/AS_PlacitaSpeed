@@ -21,7 +21,7 @@ export class RechargeController {
     private readonly consultRechargesByUser: ConsultRechargesByUserService
   ) {}
 
-  /**sudo apt  install docker-compose
+  /**
    * GET /api/recharges
    * Retorna la lista de recargas del usuario autenticado.
    */

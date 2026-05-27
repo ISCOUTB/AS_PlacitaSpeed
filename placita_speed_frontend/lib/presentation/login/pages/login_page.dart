@@ -29,8 +29,8 @@ class _LoginPageState extends State<LoginPage> {
     if (!context.mounted) return;
 
     final targetPage = user.userType == 'admin'
-        ? const AdminHomePage()
-        : const StudentHomePage();
+        ? AdminHomePage(user: user)
+        : StudentHomePage(user: user);
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => targetPage),

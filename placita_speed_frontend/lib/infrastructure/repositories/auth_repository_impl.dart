@@ -1,69 +1,43 @@
-import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 
-import 'package:http/http.dart' as http;
-import 'package:placita_speed_frontend/config/api_config.dart';
 import 'package:placita_speed_frontend/domain/entities/user_entity.dart';
 import 'package:placita_speed_frontend/domain/repositories/auth_repository.dart';
+import 'package:placita_speed_frontend/infrastructure/services/api_service.dart';
+import 'package:placita_speed_frontend/infrastructure/services/auth_token.dart';
 
 class AuthRepositoryImpl extends AuthRepository {
-  static final _client = http.Client();
-  static final _base = Uri.parse(ApiConfig.baseUrl);
-
   static const _offlineUsers = [
     {
       'email': 'estudiante@utb.edu.co',
       'password': 'estudiante123',
-      'name': 'Fabian Granados',
+      'name': 'Estudiante UTB',
       'userType': 'student',
-      'virtualBalance': 48500.0,
+      'virtualBalance': 50000.0,
     },
     {
-      'email': 'admin@utb.edu.co',
-      'password': 'admin123',
-      'name': 'Administrador UTB',
+      'email': 'hasgope@gmail.com',
+      'password': 'admin1234',
+      'name': 'Administrador',
       'userType': 'admin',
       'virtualBalance': 0.0,
     },
   ];
 
-  String? _token;
   UserEntity? _currentUser;
 
   @override
   Future<UserEntity> login(String email, String password) async {
     try {
-      final response = await _client
-          .post(
-            _base.replace(path: '/api/users/login'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'email': email.trim(),
-              'password': password,
-            }),
-          )
-          .timeout(const Duration(seconds: 10));
+      final token = await ApiService.login(email, password);
+      AuthToken.set(token);
 
-      final body = _decodeBody(response.body);
-
-      if (response.statusCode != 200) {
-        throw Exception(body['message'] ?? 'Correo o contraseña incorrectos');
-      }
-
-      final token = body['token'] as String?;
-      if (token == null || token.isEmpty) {
-        throw Exception('La respuesta de autenticación no incluye token');
-      }
-
-      _token = token;
-      _currentUser = await _fetchCurrentUser(token);
+      final data = await ApiService.getMe();
+      _currentUser = _mapUser(data);
       return _currentUser!;
     } on TimeoutException catch (_) {
       return _loginOffline(email, password, 'El servidor tardó demasiado en responder');
     } on SocketException catch (_) {
-      return _loginOffline(email, password, 'No fue posible conectar con el servidor');
-    } on http.ClientException catch (_) {
       return _loginOffline(email, password, 'No fue posible conectar con el servidor');
     }
   }
@@ -75,76 +49,34 @@ class AuthRepositoryImpl extends AuthRepository {
 
   @override
   Future<UserEntity?> getCurrentUser() async {
-    if (_currentUser != null) {
-      return _currentUser;
-    }
+    if (_currentUser != null) return _currentUser;
+    if (!AuthToken.isSet) return null;
 
-    if (_token == null) {
+    try {
+      final data = await ApiService.getMe();
+      _currentUser = _mapUser(data);
+      return _currentUser;
+    } catch (_) {
       return null;
     }
-
-    _currentUser = await _fetchCurrentUser(_token!);
-    return _currentUser;
   }
 
   @override
-  Future<String?> getToken() async => _token;
+  Future<String?> getToken() async => AuthToken.token;
 
   @override
   Future<void> logout() async {
-    final token = _token;
-
-    if (token != null) {
-      try {
-        await _client
-            .post(
-              _base.replace(path: '/api/users/logout'),
-              headers: {
-                'Authorization': 'Bearer $token',
-                'Content-Type': 'application/json',
-              },
-            )
-            .timeout(const Duration(seconds: 10));
-      } catch (_) {
-        // Logout stateless: limpiamos el cliente aunque falle la llamada.
+    try {
+      if (AuthToken.isSet) {
+        await ApiService.logout();
       }
-    }
-
-    _token = null;
+    } catch (_) {}
+    AuthToken.clear();
     _currentUser = null;
   }
 
   @override
-  Future<bool> isAuthenticated() async => _token != null;
-
-  Future<UserEntity> _fetchCurrentUser(String token) async {
-    final response = await _client
-        .get(
-          _base.replace(path: '/api/users/me'),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        )
-        .timeout(const Duration(seconds: 10));
-
-    final body = _decodeBody(response.body);
-
-    if (response.statusCode != 200) {
-      throw Exception(body['message'] ?? 'No se pudo cargar el usuario');
-    }
-
-    return _mapUser(body);
-  }
-
-  Map<String, dynamic> _decodeBody(String body) {
-    final decoded = jsonDecode(body);
-    if (decoded is Map<String, dynamic>) {
-      return decoded;
-    }
-
-    return <String, dynamic>{};
-  }
+  Future<bool> isAuthenticated() async => AuthToken.isSet;
 
   UserEntity _mapUser(Map<String, dynamic> data) {
     final role = (data['role'] ?? data['userType'] ?? 'USER').toString();
@@ -162,21 +94,21 @@ class AuthRepositoryImpl extends AuthRepository {
 
   UserEntity _loginOffline(String email, String password, String cause) {
     final match = _offlineUsers.where(
-      (user) => user['email'] == email.trim() && user['password'] == password,
+      (u) => u['email'] == email.trim() && u['password'] == password,
     );
 
     if (match.isEmpty) {
       throw Exception('$cause. Credenciales inválidas en modo local.');
     }
 
-    final user = match.first;
-    _token = 'offline:${user['email']}';
+    final u = match.first;
+    AuthToken.set('offline:${u['email']}');
     _currentUser = UserEntity(
-      id: user['email'] as String,
-      email: user['email'] as String,
-      name: user['name'] as String,
-      userType: user['userType'] as String,
-      virtualBalance: (user['virtualBalance'] as num).toDouble(),
+      id: u['email'] as String,
+      email: u['email'] as String,
+      name: u['name'] as String,
+      userType: u['userType'] as String,
+      virtualBalance: (u['virtualBalance'] as num).toDouble(),
     );
     return _currentUser!;
   }

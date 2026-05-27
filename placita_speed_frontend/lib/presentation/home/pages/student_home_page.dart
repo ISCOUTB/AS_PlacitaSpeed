@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:placita_speed_frontend/config/app_config.dart';
+import 'package:placita_speed_frontend/domain/entities/lunch_entity.dart';
+import 'package:placita_speed_frontend/domain/entities/user_entity.dart';
 import 'package:placita_speed_frontend/infrastructure/services/api_service.dart';
 import 'package:placita_speed_frontend/presentation/login/pages/login_page.dart';
 import 'package:placita_speed_frontend/presentation/ticket/pages/ticket_page.dart';
 import 'package:placita_speed_frontend/presentation/theme/app_theme.dart';
 
 class StudentHomePage extends StatefulWidget {
-  const StudentHomePage({super.key});
+  final UserEntity user;
+
+  const StudentHomePage({super.key, required this.user});
 
   @override
   State<StudentHomePage> createState() => _StudentHomePageState();
@@ -15,84 +19,8 @@ class StudentHomePage extends StatefulWidget {
 class _StudentHomePageState extends State<StudentHomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
-
-  List<_WeeklyMenuItem> _weeklyMenu = [];
-  List<_InventoryItem> _todayInventory = [];
-  String _userName = 'Usuario';
-  String _balance = '0';
-  String _dailyTitle = 'Menú del día';
-  String _dailySubtitle = '';
-  String _dailyPrice = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    try {
-      final user = await AppConfig().authRepository.getCurrentUser();
-      if (user != null) {
-        setState(() {
-          _userName = user.name;
-          _balance = _formatCurrency(user.virtualBalance);
-        });
-      }
-
-      final lunches = await ApiService.getLunches();
-
-      // Build weekly menu from available lunches (take up to 5)
-      final days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-      final weekly = <_WeeklyMenuItem>[];
-      for (var i = 0; i < lunches.length && i < 5; i++) {
-        final l = lunches[i];
-        weekly.add(_WeeklyMenuItem(
-          day: days[i],
-          lunch: l.description.isNotEmpty
-              ? '${l.name}\n${l.description}'
-              : l.name,
-          price: _formatCurrency(l.virtualPrice),
-        ));
-      }
-
-      // Daily menu: use first lunch if exists
-      if (lunches.isNotEmpty) {
-        final d = lunches.first;
-        _dailyTitle = d.name;
-        _dailySubtitle = d.description;
-        _dailyPrice = _formatCurrency(d.virtualPrice);
-      }
-
-      final totalLunchStock = lunches.fold<int>(0, (s, e) => s + e.stock);
-
-      setState(() {
-        _weeklyMenu = weekly;
-        _todayInventory = [
-          _InventoryItem(name: 'Almuerzos del día', units: '$totalLunchStock unidades disponibles'),
-          _InventoryItem(name: 'Complementos', units: '0 unidades disponibles'),
-          _InventoryItem(name: 'Bebidas', units: '0 unidades disponibles'),
-        ];
-      });
-    } catch (e) {
-      // Silently fail; mantenemos valores por defecto
-    }
-  }
-
-  String _formatCurrency(double value) {
-    final intVal = value.round();
-    final s = intVal.toString();
-    var result = '';
-    var count = 0;
-    for (var i = s.length - 1; i >= 0; i--) {
-      result = '${s[i]}$result';
-      count++;
-      if (count % 3 == 0 && i != 0) {
-        result = '.$result';
-      }
-    }
-    return result;
-  }
+  List<LunchEntity> _lunches = [];
+  double _balance = 0;
 
   final List<_TimelineItem> _todayTimeline = const [
     _TimelineItem(
@@ -115,6 +43,71 @@ class _StudentHomePageState extends State<StudentHomePage> {
     ),
   ];
 
+  List<_InventoryItem> get _todayInventory {
+    if (_lunches.isEmpty) {
+      return [_InventoryItem(name: 'Almuerzos del día', units: 'Cargando...')];
+    }
+
+    final total = _lunches.fold<int>(0, (s, e) => s + e.stock);
+    return [
+      _InventoryItem(name: 'Almuerzos del día', units: '$total unidades disponibles'),
+      _InventoryItem(name: 'Complementos', units: '0 unidades disponibles'),
+      _InventoryItem(name: 'Bebidas', units: '0 unidades disponibles'),
+    ];
+  }
+
+  String get _formattedBalance {
+    return _balance
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]}.',
+        );
+  }
+
+  List<_WeeklyMenuItem> get _weeklyMenu {
+    if (_lunches.isEmpty) {
+      return const [
+        _WeeklyMenuItem(day: 'Cargando...', lunch: '', price: ''),
+      ];
+    }
+
+    return _lunches.asMap().entries.map((entry) {
+      final lunch = entry.value;
+      final price = lunch.virtualPrice
+          .toStringAsFixed(0)
+          .replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (m) => '${m[1]}.',
+          );
+      return _WeeklyMenuItem(
+        day: 'Opción ${entry.key + 1}',
+        lunch: lunch.description.isNotEmpty
+            ? '${lunch.name}: ${lunch.description}'
+            : lunch.name,
+        price: price,
+      );
+    }).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _balance = widget.user.virtualBalance;
+    _loadLunches();
+  }
+
+  Future<void> _loadLunches() async {
+    try {
+      final lunches = await ApiService.getLunches();
+      if (mounted) setState(() => _lunches = lunches);
+    } catch (_) {}
+  }
+
+  Future<void> _refresh() async {
+    await _loadLunches();
+  }
+
   void _onNavTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -129,11 +122,15 @@ class _StudentHomePageState extends State<StudentHomePage> {
   }
 
   Future<void> _handleOrder(BuildContext context) async {
+    final lunchId = _lunches.isNotEmpty ? _lunches.first.id : 1;
     try {
-      final ticket = await ApiService.createTicket(
-        lunchId: 1,
-      );
+      final ticket = await ApiService.buyTicket(lunchId);
       if (!context.mounted) return;
+      if (mounted) {
+        setState(() {
+          _balance -= _lunches.isNotEmpty ? _lunches.first.virtualPrice : 0;
+        });
+      }
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => TicketPage(ticket: ticket)),
       );
@@ -166,11 +163,12 @@ class _StudentHomePageState extends State<StudentHomePage> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: _StudentDrawer(
+        userEmail: widget.user.email,
         onHomeTap: () => _onDrawerTabSelected(0),
         onOrderTap: () => _onDrawerTabSelected(1),
         onProfileTap: () => _onDrawerTabSelected(2),
-        onHelpTap: () => _onDrawerTabSelected(2),
-        onSettingsTap: () => _onDrawerTabSelected(2),
+        onHelpTap: () {},
+        onSettingsTap: () {},
         onLogoutTap: () => _logout(context),
       ),
       backgroundColor: const Color(0xFFF5F7FB),
@@ -187,28 +185,31 @@ class _StudentHomePageState extends State<StudentHomePage> {
           child: IndexedStack(
             index: _selectedIndex,
             children: [
-              _OverviewSection(
-                weeklyMenu: _weeklyMenu,
-                onMenuTap: _openDrawer,
-                onLogout: () => _logout(context),
-                userName: _userName,
-                balance: _balance,
+              RefreshIndicator(
+                onRefresh: _refresh,
+                child: _OverviewSection(
+                  weeklyMenu: _weeklyMenu,
+                  balance: _formattedBalance,
+                  onMenuTap: _openDrawer,
+                  onLogout: () => _logout(context),
+                ),
               ),
-              _OrderSection(
-                timeline: _todayTimeline,
-                inventory: _todayInventory,
-                onMenuTap: _openDrawer,
-                onOrder: _handleOrder,
-                balance: _balance,
-                dailyTitle: _dailyTitle,
-                dailySubtitle: _dailySubtitle,
-                dailyPrice: _dailyPrice,
+              RefreshIndicator(
+                onRefresh: _refresh,
+                child: _OrderSection(
+                  timeline: _todayTimeline,
+                  inventory: _todayInventory,
+                  balance: _formattedBalance,
+                  lunches: _lunches,
+                  onMenuTap: _openDrawer,
+                  onOrder: _handleOrder,
+                ),
               ),
               _ProfileSection(
+                userEmail: widget.user.email,
+                balance: _formattedBalance,
                 onMenuTap: _openDrawer,
                 onLogout: () => _logout(context),
-                name: _userName,
-                balance: _balance,
               ),
             ],
           ),
@@ -224,17 +225,15 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
 class _OverviewSection extends StatelessWidget {
   final List<_WeeklyMenuItem> weeklyMenu;
+  final String balance;
   final VoidCallback onMenuTap;
   final VoidCallback onLogout;
-  final String userName;
-  final String balance;
 
   const _OverviewSection({
     required this.weeklyMenu,
+    required this.balance,
     required this.onMenuTap,
     required this.onLogout,
-    required this.userName,
-    required this.balance,
   });
 
   @override
@@ -242,17 +241,17 @@ class _OverviewSection extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
-              child: _StudentHeader(
-              title: 'Hola, $userName',
-            subtitle: 'Consulta tu menú semanal y el inventario del día',
+          child: _StudentHeader(
+            title: 'Menú disponible',
+            subtitle: 'Consulta los almuerzos disponibles hoy',
             actionIcon: Icons.menu_rounded,
             onActionTap: onMenuTap,
           ),
         ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-            sliver: SliverToBoxAdapter(child: _BalanceCard(balance: balance)),
-          ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+          sliver: SliverToBoxAdapter(child: _BalanceCard(balance: balance)),
+        ),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           sliver: SliverToBoxAdapter(
@@ -281,26 +280,37 @@ class _OverviewSection extends StatelessWidget {
 class _OrderSection extends StatelessWidget {
   final List<_TimelineItem> timeline;
   final List<_InventoryItem> inventory;
+  final String balance;
+  final List<LunchEntity> lunches;
   final VoidCallback onMenuTap;
   final Future<void> Function(BuildContext) onOrder;
-  final String balance;
-  final String dailyTitle;
-  final String dailySubtitle;
-  final String dailyPrice;
 
   const _OrderSection({
     required this.timeline,
     required this.inventory,
+    required this.balance,
+    required this.lunches,
     required this.onMenuTap,
     required this.onOrder,
-    required this.balance,
-    required this.dailyTitle,
-    required this.dailySubtitle,
-    required this.dailyPrice,
   });
 
   @override
   Widget build(BuildContext context) {
+    final firstLunch = lunches.isNotEmpty ? lunches.first : null;
+    final lunchTitle = firstLunch?.name ?? 'Cargando menú...';
+    final lunchSubtitle = firstLunch?.description ?? 'Espera un momento';
+    final lunchPrice = firstLunch != null
+        ? firstLunch.virtualPrice
+            .toStringAsFixed(0)
+            .replaceAllMapped(
+              RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+              (m) => '${m[1]}.',
+            )
+        : '—';
+    final lunchStock = firstLunch != null
+        ? '${firstLunch.stock} unidades disponibles'
+        : 'Sin disponibilidad';
+
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
@@ -335,11 +345,11 @@ class _OrderSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
           sliver: SliverToBoxAdapter(
             child: _DailyMenuCard(
-              title: dailyTitle,
-              subtitle: dailySubtitle,
-              price: dailyPrice.isNotEmpty ? dailyPrice : '0',
-              availability: 'Inventario del día actual',
-              onOrder: onOrder,
+              title: lunchTitle,
+              subtitle: lunchSubtitle,
+              price: lunchPrice,
+              availability: lunchStock,
+              onOrder: firstLunch != null ? onOrder : (_) async {},
             ),
           ),
         ),
@@ -387,12 +397,17 @@ class _OrderSection extends StatelessWidget {
 }
 
 class _ProfileSection extends StatelessWidget {
+  final String userEmail;
+  final String balance;
   final VoidCallback onMenuTap;
   final VoidCallback onLogout;
-  final String name;
-  final String balance;
 
-  const _ProfileSection({required this.onMenuTap, required this.onLogout, required this.name, required this.balance});
+  const _ProfileSection({
+    required this.userEmail,
+    required this.balance,
+    required this.onMenuTap,
+    required this.onLogout,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -411,7 +426,7 @@ class _ProfileSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
           sliver: SliverToBoxAdapter(
             child: _ProfileSummaryCard(
-              name: name,
+              name: userEmail,
               balance: balance,
             ),
           ),
@@ -872,10 +887,7 @@ class _OrderSummaryCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: AppTheme.white.withAlpha(34),
                   borderRadius: BorderRadius.circular(999),
@@ -949,17 +961,19 @@ class _DailyMenuCardState extends State<_DailyMenuCard> {
   Future<void> _handleOrder() async {
     setState(() => _isOrdering = true);
     await widget.onOrder(context);
-    if (mounted) setState(() => _isOrdering = false);
+    if (mounted) {
+      setState(() => _isOrdering = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppTheme.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFD8DEFF), width: 1.4),
+        border: Border.all(color: const Color(0xFFE4E9FA)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -971,7 +985,7 @@ class _DailyMenuCardState extends State<_DailyMenuCard> {
                 height: 52,
                 decoration: BoxDecoration(
                   color: const Color(0xFFEAF0FF),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
                   Icons.restaurant_rounded,
@@ -1473,6 +1487,7 @@ class _BottomNavItem extends StatelessWidget {
 }
 
 class _StudentDrawer extends StatelessWidget {
+  final String userEmail;
   final VoidCallback onHomeTap;
   final VoidCallback onOrderTap;
   final VoidCallback onProfileTap;
@@ -1481,6 +1496,7 @@ class _StudentDrawer extends StatelessWidget {
   final VoidCallback onLogoutTap;
 
   const _StudentDrawer({
+    required this.userEmail,
     required this.onHomeTap,
     required this.onOrderTap,
     required this.onProfileTap,
@@ -1521,22 +1537,22 @@ class _StudentDrawer extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Fabian Andres Granados Moron',
-                          style: TextStyle(
+                          userEmail,
+                          style: const TextStyle(
                             color: AppTheme.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          'fgranados@utb.edu.co',
-                          style: TextStyle(color: AppTheme.white, fontSize: 13),
+                          userEmail,
+                          style: const TextStyle(color: AppTheme.white, fontSize: 13),
                         ),
                       ],
                     ),
@@ -1560,7 +1576,6 @@ class _StudentDrawer extends StatelessWidget {
               label: 'Perfil',
               onTap: onProfileTap,
             ),
-            const Divider(height: 1),
             _DrawerItem(
               icon: Icons.help_outline_rounded,
               label: 'Ayuda',
@@ -1571,6 +1586,7 @@ class _StudentDrawer extends StatelessWidget {
               label: 'Configuración',
               onTap: onSettingsTap,
             ),
+            const Divider(height: 1),
             _DrawerItem(
               icon: Icons.logout_rounded,
               label: 'Cerrar sesión',
@@ -1600,19 +1616,14 @@ class _DrawerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive
-        ? const Color(0xFFC0392B)
-        : const Color(0xFF1B1B1B);
+    final color = destructive ? const Color(0xFFC0392B) : const Color(0xFF1B1B1B);
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(
         label,
         style: TextStyle(color: color, fontWeight: FontWeight.w700),
       ),
-      onTap: () {
-        Navigator.of(context).pop();
-        onTap();
-      },
+      onTap: onTap,
     );
   }
 }

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:placita_speed_frontend/config/app_config.dart';
+import 'package:placita_speed_frontend/domain/entities/ticket_entity.dart';
+import 'package:placita_speed_frontend/domain/entities/user_entity.dart';
 import 'package:placita_speed_frontend/infrastructure/services/api_service.dart';
 import 'package:placita_speed_frontend/presentation/login/pages/login_page.dart';
 import 'package:placita_speed_frontend/presentation/scanner/pages/qr_scanner_page.dart';
 
 class AdminHomePage extends StatefulWidget {
-  const AdminHomePage({super.key});
+  final UserEntity user;
+
+  const AdminHomePage({super.key, required this.user});
 
   @override
   State<AdminHomePage> createState() => _AdminHomePageState();
@@ -19,62 +23,63 @@ class _AdminHomePageState extends State<AdminHomePage> {
   final ScrollController _scrollController = ScrollController();
 
   List<_InventoryControlItem> _inventory = [];
-  List<_OrderItem> _orders = [];
+  List<TicketEntity> _tickets = [];
+
+  int get _totalStock =>
+      _inventory.fold<int>(0, (sum, item) => sum + item.stock);
+
+  int get _pendingCount =>
+      _tickets.where((t) => t.state == 'NO_USED').length;
+
+  int get _deliveredCount =>
+      _tickets.where((t) => t.state == 'USED').length;
 
   @override
   void initState() {
     super.initState();
     _loadAdminData();
+    _loadTickets();
   }
 
   Future<void> _loadAdminData() async {
     try {
       final lunches = await ApiService.getLunches();
-      final inv = <_InventoryControlItem>[];
       final total = lunches.fold<int>(0, (s, e) => s + e.stock);
-      inv.add(_InventoryControlItem(name: 'Almuerzos del día', stock: total, unit: 'u'));
-      inv.add(_InventoryControlItem(name: 'Complementos', stock: 0, unit: 'u'));
-      inv.add(_InventoryControlItem(name: 'Bebidas', stock: 0, unit: 'u'));
-      inv.add(_InventoryControlItem(name: 'Postres', stock: 0, unit: 'u'));
-
-      // Orders: placeholder until admin tickets endpoint exists
-      final orders = <_OrderItem>[];
-
-      setState(() {
-        _inventory = inv;
-        _orders = orders;
-      });
-    } catch (e) {
-      // ignore errors — keep defaults
+      final inv = <_InventoryControlItem>[
+        _InventoryControlItem(name: 'Almuerzos del día', stock: total, unit: 'u'),
+        _InventoryControlItem(name: 'Complementos', stock: 0, unit: 'u'),
+        _InventoryControlItem(name: 'Bebidas', stock: 0, unit: 'u'),
+        _InventoryControlItem(name: 'Postres', stock: 0, unit: 'u'),
+      ];
+      if (mounted) setState(() => _inventory = inv);
+    } catch (_) {
+      setState(() => _inventory = [
+        _InventoryControlItem(name: 'Almuerzos del día', stock: 0, unit: 'u'),
+        _InventoryControlItem(name: 'Complementos', stock: 0, unit: 'u'),
+        _InventoryControlItem(name: 'Bebidas', stock: 0, unit: 'u'),
+        _InventoryControlItem(name: 'Postres', stock: 0, unit: 'u'),
+      ]);
     }
   }
 
-  // initial orders left empty; admin orders endpoint not present yet
+  Future<void> _loadTickets() async {
+    try {
+      final tickets = await ApiService.getAllTickets();
+      if (mounted) setState(() => _tickets = tickets);
+    } catch (_) {}
+  }
 
-  int get _totalStock => _inventory.fold<int>(0, (sum, item) => sum + item.stock);
+  Future<void> _refresh() async {
+    await Future.wait([_loadAdminData(), _loadTickets()]);
+  }
 
   void _incrementStock(int index) {
-    setState(() {
-      _inventory[index].stock++;
-    });
+    setState(() => _inventory[index].stock++);
   }
 
   void _decrementStock(int index) {
-    if (_inventory[index].stock == 0) {
-      return;
-    }
-
-    setState(() {
-      _inventory[index].stock--;
-    });
-  }
-
-  void _toggleOrderStatus(int index) {
-    setState(() {
-      _orders[index].status = _orders[index].status == 'Entregado'
-          ? 'Pendiente'
-          : 'Entregado';
-    });
+    if (_inventory[index].stock == 0) return;
+    setState(() => _inventory[index].stock--);
   }
 
   @override
@@ -86,20 +91,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
   void _scrollToSection(GlobalKey key) {
     _scaffoldKey.currentState?.closeDrawer();
     final targetContext = key.currentContext;
-    if (targetContext == null) {
-      return;
-    }
+    if (targetContext == null) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       final currentContext = key.currentContext;
-      if (currentContext == null) {
-        return;
-      }
-
+      if (currentContext == null) return;
       Scrollable.ensureVisible(
         currentContext,
         duration: const Duration(milliseconds: 350),
@@ -138,7 +135,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
         onLogoutTap: _logout,
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openScanner,
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const QrScannerPage()),
+        ),
         backgroundColor: const Color(0xFF0052CC),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.qr_code_scanner_rounded),
@@ -157,119 +156,131 @@ class _AdminHomePageState extends State<AdminHomePage> {
         ),
         child: SafeArea(
           bottom: false,
-          child: CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
+          child: RefreshIndicator(
+            onRefresh: _refresh,
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+                    child: _AdminHeader(
+                      totalStock: _totalStock,
+                      onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+                      onLogoutTap: _logout,
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverToBoxAdapter(
+                    child: Container(
+                      key: _summarySectionKey,
+                      child: GridView.count(
+                        crossAxisCount: MediaQuery.of(context).size.width >= 900
+                            ? 4
+                            : 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.3,
+                        children: [
+                          _SummaryCard(
+                            title: 'Stock total',
+                            value: '$_totalStock',
+                            icon: Icons.inventory_2_outlined,
+                            accentColor: const Color(0xFF0052CC),
+                          ),
+                          _SummaryCard(
+                            title: 'Pedidos pendientes',
+                            value: '$_pendingCount',
+                            icon: Icons.receipt_long_outlined,
+                            accentColor: const Color(0xFFF59E0B),
+                          ),
+                          _SummaryCard(
+                            title: 'Entregados hoy',
+                            value: '$_deliveredCount',
+                            icon: Icons.verified_outlined,
+                            accentColor: const Color(0xFF10B981),
+                          ),
+                          _SummaryCard(
+                            title: 'Total tickets',
+                            value: '${_tickets.length}',
+                            icon: Icons.confirmation_number_outlined,
+                            accentColor: const Color(0xFFEF4444),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SliverPadding(
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-                  child: _AdminHeader(
-                    totalStock: _totalStock,
-                    onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-                    onLogoutTap: _logout,
-                  ),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverToBoxAdapter(
-                  child: Container(
-                    key: _summarySectionKey,
-                    child: GridView.count(
-                      crossAxisCount: MediaQuery.of(context).size.width >= 900
-                          ? 4
-                          : 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.3,
-                      children: const [
-                        _SummaryCard(
-                          title: 'Stock total',
-                          value: '68',
-                          icon: Icons.inventory_2_outlined,
-                          accentColor: Color(0xFF0052CC),
-                        ),
-                        _SummaryCard(
-                          title: 'Pedidos pendientes',
-                          value: '2',
-                          icon: Icons.receipt_long_outlined,
-                          accentColor: Color(0xFFF59E0B),
-                        ),
-                        _SummaryCard(
-                          title: 'Entregados hoy',
-                          value: '1',
-                          icon: Icons.verified_outlined,
-                          accentColor: Color(0xFF10B981),
-                        ),
-                        _SummaryCard(
-                          title: 'Alertas',
-                          value: '0',
-                          icon: Icons.warning_amber_rounded,
-                          accentColor: Color(0xFFEF4444),
-                        ),
-                      ],
+                  sliver: SliverToBoxAdapter(
+                    child: Container(
+                      key: _inventorySectionKey,
+                      child: const _SectionHeader(
+                        title: 'Inventario',
+                        subtitle: 'Manipula stock en tiempo real',
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-                sliver: SliverToBoxAdapter(
-                  child: Container(
-                    key: _inventorySectionKey,
-                    child: const _SectionHeader(
-                      title: 'Inventario',
-                      subtitle: 'Manipula stock en tiempo real',
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverList.separated(
+                    itemCount: _inventory.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final item = _inventory[index];
+                      return _InventoryControlCard(
+                        item: item,
+                        onIncrease: () => _incrementStock(index),
+                        onDecrease: () => _decrementStock(index),
+                      );
+                    },
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
+                  sliver: SliverToBoxAdapter(
+                    child: Container(
+                      key: _ordersSectionKey,
+                      child: const _SectionHeader(
+                        title: 'Pedidos pendientes',
+                        subtitle:
+                            'Lista de pedidos sin entregar; marca como entregado al entregar en mostrador',
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverList.separated(
-                  itemCount: _inventory.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final item = _inventory[index];
-                    return _InventoryControlCard(
-                      item: item,
-                      onIncrease: () => _incrementStock(index),
-                      onDecrease: () => _decrementStock(index),
-                    );
-                  },
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  sliver: _tickets.isEmpty
+                      ? SliverToBoxAdapter(
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Text(
+                                'No hay pedidos registrados',
+                                style: TextStyle(color: Colors.grey.shade500),
+                              ),
+                            ),
+                          ),
+                        )
+                      : SliverList.separated(
+                          itemCount: _tickets.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final ticket = _tickets[index];
+                            return _TicketCard(ticket: ticket);
+                          },
+                        ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
-                sliver: SliverToBoxAdapter(
-                  child: Container(
-                    key: _ordersSectionKey,
-                    child: const _SectionHeader(
-                      title: 'Pedidos pendientes',
-                      subtitle:
-                          'Lista de pedidos sin entregar; marca como entregado al entregar en mostrador',
-                    ),
-                  ),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                sliver: SliverList.separated(
-                  itemCount: _orders.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final order = _orders[index];
-                    return _OrderCard(
-                      order: order,
-                      onToggle: () => _toggleOrderStatus(index),
-                    );
-                  },
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 32)),
-            ],
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              ],
+            ),
           ),
         ),
       ),
@@ -689,116 +700,6 @@ class _InventoryControlCard extends StatelessWidget {
   }
 }
 
-class _OrderCard extends StatelessWidget {
-  final _OrderItem order;
-  final VoidCallback? onToggle;
-
-  const _OrderCard({required this.order, required this.onToggle});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDelivered = order.status == 'Entregado';
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withAlpha(8)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: const Color(0xFF0052CC).withAlpha(18),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.shopping_bag_outlined,
-              color: Color(0xFF0052CC),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  order.customerName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${order.orderRef} · ${order.details}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      (isDelivered
-                              ? const Color(0xFF10B981)
-                              : const Color(0xFFF59E0B))
-                          .withAlpha(24),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  order.status,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: isDelivered
-                        ? const Color(0xFF059669)
-                        : const Color(0xFFD97706),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 36,
-                child: ElevatedButton(
-                  onPressed: onToggle,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDelivered
-                        ? const Color(0xFFE2E8F0)
-                        : const Color(0xFF0052CC),
-                    foregroundColor: isDelivered
-                        ? const Color(0xFF334155)
-                        : Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(isDelivered ? 'Marcar pendiente' : 'Entregar'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ActionChip extends StatelessWidget {
   final IconData icon;
   final Color color;
@@ -828,6 +729,88 @@ class _ActionChip extends StatelessWidget {
   }
 }
 
+class _TicketCard extends StatelessWidget {
+  final TicketEntity ticket;
+
+  const _TicketCard({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    final isUsed = ticket.state == 'USED';
+    final isPending = ticket.state == 'NO_USED';
+    final color = isUsed
+        ? const Color(0xFF10B981)
+        : isPending
+            ? const Color(0xFFF59E0B)
+            : const Color(0xFFEF4444);
+    final label = isUsed ? 'Entregado' : isPending ? 'Pendiente' : 'Expirado';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black.withAlpha(8)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0052CC).withAlpha(18),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.confirmation_number_outlined,
+              color: Color(0xFF0052CC),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  ticket.userEmail,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${ticket.lunchName} · ${ticket.ticketId.substring(0, 8).toUpperCase()}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: color.withAlpha(24),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _InventoryControlItem {
   final String name;
   final String unit;
@@ -837,19 +820,5 @@ class _InventoryControlItem {
     required this.name,
     required this.stock,
     required this.unit,
-  });
-}
-
-class _OrderItem {
-  final String customerName;
-  final String orderRef;
-  final String details;
-  String status;
-
-  _OrderItem({
-    required this.customerName,
-    required this.orderRef,
-    required this.details,
-    required this.status,
   });
 }

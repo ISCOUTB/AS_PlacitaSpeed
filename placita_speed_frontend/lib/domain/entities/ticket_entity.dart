@@ -30,20 +30,20 @@ class TicketEntity extends Equatable {
     final createdAtValue = json['created_at'] ?? json['createdAt'];
     final usedAtValue = json['used_at'] ?? json['usedAt'];
     final lunchNameValue =
-      lunch?['name'] ?? json['lunch_name'] ?? json['lunchName'] ?? 'Almuerzo';
+        lunch?['name'] ?? json['lunch_name'] ?? json['lunchName'] ?? 'Almuerzo';
     final lunchPriceValue = lunch?['virtual_price'] ??
-      json['lunch_price'] ??
-      json['lunchPrice'] ??
-      0;
+        json['lunch_price'] ??
+        json['lunchPrice'] ??
+        0;
     final userEmailValue =
-      user?['email'] ?? json['user_email'] ?? json['userEmail'] ?? '';
+        user?['email'] ?? json['user_email'] ?? json['userEmail'] ?? '';
 
     return TicketEntity(
       ticketId: ticketIdValue.toString(),
       state: json['state'] as String,
       createdAt: DateTime.parse(createdAtValue.toString()),
       usedAt: usedAtValue != null
-        ? DateTime.parse(usedAtValue.toString())
+          ? DateTime.parse(usedAtValue.toString())
           : null,
       lunchName: lunchNameValue.toString(),
       lunchPrice: double.parse(lunchPriceValue.toString()),

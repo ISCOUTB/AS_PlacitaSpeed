@@ -1,11 +1,13 @@
-class LunchEntity {
+import 'package:equatable/equatable.dart';
+
+class LunchEntity extends Equatable {
   final int id;
   final String name;
   final String description;
   final double virtualPrice;
   final int stock;
 
-  LunchEntity({
+  const LunchEntity({
     required this.id,
     required this.name,
     required this.description,
@@ -22,4 +24,7 @@ class LunchEntity {
       stock: (json['stock'] is int) ? json['stock'] as int : int.tryParse((json['stock'] ?? '0').toString()) ?? 0,
     );
   }
+
+  @override
+  List<Object?> get props => [id, name, description, virtualPrice, stock];
 }

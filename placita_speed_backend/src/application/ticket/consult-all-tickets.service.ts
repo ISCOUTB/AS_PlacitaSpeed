@@ -1,29 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { Ticket } from '@domain/ticket/ticket';
+import { User, UserRole } from '@domain/user/user';
 import { TicketRepositoryPort } from '@domain/ticket/ticket-repository.port';
 import { UserRepositoryPort } from '@domain/user/user-repository.port';
 import { LunchRepositoryPort } from '@domain/lunch/lunch-repository.port';
 
 @Injectable()
-export class ConsultTicketsByUserService {
+export class ConsultAllTicketsService {
   constructor(
     private readonly ticketRepository: TicketRepositoryPort,
     private readonly userRepository: UserRepositoryPort,
     private readonly lunchRepository: LunchRepositoryPort,
   ) {}
 
-  async execute(email: string): Promise<any[]> {
-    const tickets = await this.ticketRepository.findTicketsByUser(email);
-    return Promise.all(tickets.map((ticket) => this.buildTicketResponse(ticket)));
-  }
-
-  async executeById(ticketId: string): Promise<any> {
-    const ticket = await this.ticketRepository.findById(ticketId);
-    if (!ticket) {
-      throw new Error('Ticket no encontrado');
+  async execute(adminEmail: string): Promise<any[]> {
+    const admin: User | null = await this.userRepository.findByEmail(adminEmail);
+    if (!admin) {
+      throw new Error('Usuario no encontrado');
     }
-
-    return this.buildTicketResponse(ticket);
+    if (admin.role !== UserRole.ADMIN) {
+      throw new Error('No tienes permisos. Se requiere rol ADMIN.');
+    }
+    const tickets = await this.ticketRepository.findAll();
+    return Promise.all(tickets.map((ticket) => this.buildTicketResponse(ticket)));
   }
 
   private async buildTicketResponse(ticket: Ticket): Promise<any> {
@@ -32,13 +31,8 @@ export class ConsultTicketsByUserService {
       this.lunchRepository.findById(ticket.lunch_id),
     ]);
 
-    if (!user) {
-      throw new Error('Usuario no encontrado');
-    }
-
-    if (!lunch) {
-      throw new Error('Almuerzo no encontrado');
-    }
+    if (!user) throw new Error('Usuario no encontrado');
+    if (!lunch) throw new Error('Almuerzo no encontrado');
 
     return {
       ticket_id: ticket.id,
