@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { JwtGuard } from '../jwt.guard';
 import { CreateTicketDto, ValidateTicketDto } from '../DTOs/ticket.dto';
+import { ConsultAllTicketsService } from '@application/ticket/consult-all-tickets.service';
 import { ConsultTicketsByUserService } from '@application/ticket/consult-tickets-by-user.service';
 import { CreateTicketService } from '@application/ticket/create-ticket.service';
 import { ValidateTicketService } from '@application/ticket/validate-ticket.service';
@@ -19,6 +20,7 @@ import { ValidateTicketService } from '@application/ticket/validate-ticket.servi
 @Controller('api/tickets')
 export class TicketController {
   constructor(
+    private readonly consultAllTickets: ConsultAllTicketsService,
     private readonly consultTicketsByUser: ConsultTicketsByUserService,
     private readonly createTicketService: CreateTicketService,
     private readonly validateTicketSe: ValidateTicketService
@@ -35,6 +37,34 @@ export class TicketController {
       return await this.consultTicketsByUser.execute(req.user.email);
     } catch (e: any) {
       throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /**
+   * GET /api/tickets/all
+   * Retorna todos los tickets. Solo accesible por usuarios con rol ADMIN.
+   */
+  @UseGuards(JwtGuard)
+  @Get('all')
+  async getAllTickets(@Request() req) {
+    try {
+      return await this.consultAllTickets.execute(req.user.email);
+    } catch (e: any) {
+      throw new HttpException(e.message, HttpStatus.FORBIDDEN);
+    }
+  }
+
+  /**
+   * GET /api/tickets/:ticket_id
+   * Retorna el detalle de un ticket específico.
+   */
+  @UseGuards(JwtGuard)
+  @Get(':ticket_id')
+  async getTicket(@Param('ticket_id') ticketId: string) {
+    try {
+      return await this.consultTicketsByUser.executeById(ticketId);
+    } catch (e: any) {
+      throw new HttpException(e.message, HttpStatus.NOT_FOUND);
     }
   }
 

@@ -38,7 +38,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
     await _controller.stop();
 
     try {
-      final ticket = await ApiService.useTicket(raw);
+      final ticket = await ApiService.validateTicket(raw);
       if (mounted) {
         setState(() {
           _ticket = ticket;

@@ -24,16 +24,30 @@ class TicketEntity extends Equatable {
   bool get isExpired => state == 'EXPIRED';
 
   factory TicketEntity.fromJson(Map<String, dynamic> json) {
+    final lunch = json['lunch'] as Map<String, dynamic>?;
+    final user = json['user'] as Map<String, dynamic>?;
+    final ticketIdValue = json['ticket_id'] ?? json['id'] ?? '';
+    final createdAtValue = json['created_at'] ?? json['createdAt'];
+    final usedAtValue = json['used_at'] ?? json['usedAt'];
+    final lunchNameValue =
+        lunch?['name'] ?? json['lunch_name'] ?? json['lunchName'] ?? 'Almuerzo';
+    final lunchPriceValue = lunch?['virtual_price'] ??
+        json['lunch_price'] ??
+        json['lunchPrice'] ??
+        0;
+    final userEmailValue =
+        user?['email'] ?? json['user_email'] ?? json['userEmail'] ?? '';
+
     return TicketEntity(
-      ticketId: json['ticket_id'] as String,
+      ticketId: ticketIdValue.toString(),
       state: json['state'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      usedAt: json['used_at'] != null
-          ? DateTime.parse(json['used_at'] as String)
+      createdAt: DateTime.parse(createdAtValue.toString()),
+      usedAt: usedAtValue != null
+          ? DateTime.parse(usedAtValue.toString())
           : null,
-      lunchName: json['lunch']['name'] as String,
-      lunchPrice: double.parse(json['lunch']['virtual_price'].toString()),
-      userEmail: json['user']['email'] as String,
+      lunchName: lunchNameValue.toString(),
+      lunchPrice: double.parse(lunchPriceValue.toString()),
+      userEmail: userEmailValue.toString(),
     );
   }
 

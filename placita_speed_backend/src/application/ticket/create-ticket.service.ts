@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Ticket, TicketState } from '@domain/ticket/ticket';
+import { User } from '@domain/user/user';
+import { Lunch } from '@domain/lunch/lunch';
 import { LunchRepositoryPort } from '@domain/lunch/lunch-repository.port';
 import { TicketRepositoryPort } from '@domain/ticket/ticket-repository.port';
 import { UserRepositoryPort } from '@domain/user/user-repository.port';
@@ -12,7 +14,7 @@ export class CreateTicketService {
     private readonly userRepository: UserRepositoryPort,
   ) {}
 
-  async execute(email: string, lunchId: number): Promise<Ticket> {
+  async execute(email: string, lunchId: number): Promise<any> {
     // Obtener almuerzo y validar existencia
     const lunch = await this.lunchRepository.findById(lunchId);
     if (!lunch) {
@@ -43,6 +45,28 @@ export class CreateTicketService {
     ticket.user_email = email;
     ticket.lunch_id = lunchId;
 
-    return this.ticketRepository.save(ticket);
+    const savedTicket = await this.ticketRepository.save(ticket);
+    return this.buildTicketResponse(savedTicket, user, lunch);
+  }
+
+  private buildTicketResponse(ticket: Ticket, user: User, lunch: Lunch): any {
+    return {
+      ticket_id: ticket.id,
+      state: ticket.state,
+      created_at: ticket.created_at,
+      used_at: ticket.used_at ?? null,
+      user: {
+        email: user.email,
+        role: user.role,
+        virtual_balance: Number(user.virtual_balance),
+      },
+      lunch: {
+        id: lunch.id,
+        name: lunch.name,
+        description: lunch.description,
+        virtual_price: Number(lunch.virtual_price),
+        stock: lunch.stock,
+      },
+    };
   }
 }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { TicketController } from './ticket.controller';
 
+import { ConsultAllTicketsService } from '@application/ticket/consult-all-tickets.service';
 import { ConsultTicketsByUserService } from '@application/ticket/consult-tickets-by-user.service';
 import { CreateTicketService } from '@application/ticket/create-ticket.service';
 import { ValidateTicketService } from '@application/ticket/validate-ticket.service';
@@ -20,6 +21,7 @@ import { BcryptJwtAuthAdapter } from '@infrastructure/auth/bcrypt-jwt-auth.adapt
 @Module({
   controllers: [TicketController],
   providers: [
+    ConsultAllTicketsService,
     ConsultTicketsByUserService,
     CreateTicketService,
     ValidateTicketService,

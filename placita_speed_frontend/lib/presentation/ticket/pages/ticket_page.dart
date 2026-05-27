@@ -198,8 +198,7 @@ class _DetailsCard extends StatelessWidget {
           _DetailRow(
             icon: Icons.account_balance_wallet_rounded,
             label: 'Precio',
-            value:
-                '\$${ticket.lunchPrice.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
+            value: '\$${ticket.lunchPrice.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
           ),
           const Divider(height: 20),
           _DetailRow(
