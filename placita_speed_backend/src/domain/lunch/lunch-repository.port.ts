@@ -1,17 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Lunch } from './lunch';
+import { RepositoryPort } from '@domain/repository.port';
 
-/**
- * Puerto de repositorio para Lunch
- * Define el contrato que cualquier adaptador de persistencia debe cumplir
- * Esta interfaz pertenece al dominio y es independiente de TypeORM
- */
 @Injectable()
-export abstract class LunchRepositoryPort {
-  abstract findById(id: number): Promise<Lunch | null>;
-  abstract findAll(): Promise<Lunch[]>;
+export abstract class LunchRepositoryPort extends RepositoryPort<Lunch> {
+  abstract find(id: number): Promise<Lunch | null>;
   abstract findAvailable(): Promise<Lunch[]>;
-  abstract save(lunch: Lunch): Promise<Lunch>;
-  abstract update(lunch: Lunch): void;
   abstract delete(id: number): void;
 }

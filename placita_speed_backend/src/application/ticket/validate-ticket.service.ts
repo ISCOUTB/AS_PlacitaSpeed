@@ -6,7 +6,7 @@ import { TicketRepositoryPort } from '@domain/ticket/ticket-repository.port';
 import { LunchRepositoryPort } from '@domain/lunch/lunch-repository.port';
 
 @Injectable()
-export class ValidateTicketService {
+export class ValidateTicket {
     constructor(
         private readonly userRepository: UserRepositoryPort,
       private readonly ticketRepository: TicketRepositoryPort,
@@ -15,7 +15,7 @@ export class ValidateTicketService {
 
     async execute(adminEmail: string, ticketId: string): Promise<any> {
     // Validar que sea ADMIN
-    const admin: User|null = await this.userRepository.findByEmail(adminEmail);
+    const admin: User|null = await this.userRepository.find(adminEmail);
     if (!admin) {
       throw new Error('Usuario no encontrado');
     }
@@ -24,7 +24,7 @@ export class ValidateTicketService {
     }
 
     // Buscar ticket
-    const ticket: Ticket|null = await this.ticketRepository.findById(ticketId);
+    const ticket: Ticket|null = await this.ticketRepository.find(ticketId);
     if (!ticket) {
       throw new Error('Ticket no encontrado');
     }
@@ -37,8 +37,8 @@ export class ValidateTicketService {
 
     ticket.state = TicketState.USED;
     ticket.used_at = new Date();
-    const user = await this.userRepository.findByEmail(ticket.user_email);
-    const lunch = await this.lunchRepository.findById(ticket.lunch_id);
+    const user = await this.userRepository.find(ticket.user_email);
+    const lunch = await this.lunchRepository.find(ticket.lunch_id);
 
     if (!user) {
       throw new Error('Usuario no encontrado');

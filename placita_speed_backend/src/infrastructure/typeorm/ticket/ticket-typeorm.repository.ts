@@ -13,7 +13,7 @@ import { LunchTypeormRepository } from '../lunch/lunch-typeorm.repository';
 
 @Injectable()
 export class TicketTypeormRepository extends TicketRepositoryPort {
-  ticketRepository: Repository<TicketEntity>;
+  repository: Repository<TicketEntity>;
 
   constructor(
     private dataSource: DataSource,
@@ -21,7 +21,7 @@ export class TicketTypeormRepository extends TicketRepositoryPort {
     private lunchRepository: LunchTypeormRepository
   ) {
     super();
-    this.ticketRepository = this.dataSource.getRepository(TicketEntity);
+    this.repository = this.dataSource.getRepository(TicketEntity);
   }
 
   mapToDomain(ticketEntity: TicketEntity): Ticket {
@@ -42,90 +42,76 @@ export class TicketTypeormRepository extends TicketRepositoryPort {
     ticketEntity.created_at = ticket.created_at;
     ticketEntity.used_at = ticket.used_at || undefined;
 
-    let userEntity: UserEntity | null = await this.userRepository.findByEmailORM(user_email);
+    let userEntity: UserEntity | null = await this.userRepository.findORM(user_email);
     if (!userEntity) {
       throw new Error(`Usuario con email ${user_email} no encontrado`);
     }
     ticketEntity.user = userEntity;
 
-    let lunchEntity: LunchEntity | null = await this.lunchRepository.findByIdORM(lunch_id);
+    let lunchEntity: LunchEntity | null = await this.lunchRepository.findORM(lunch_id);
     if (!lunchEntity) {
       throw new Error(`Almuerzo con id ${lunch_id} no encontrado`);
     }
     ticketEntity.lunch = lunchEntity;
 
-    /*
-    this.userRepository.findByEmailORM(user_email)
-    .then(userEntity => {
-      if (!userEntity) {
-        throw new Error(`Usuario con email ${user_email} no encontrado`);
-      }
-      ticketEntity.user = userEntity;
-    });
-
-    this.lunchRepository.findByIdORM(lunch_id)
-    .then(lunchEntity => {
-      if (!lunchEntity) {
-        throw new Error(`Almuerzo con id ${lunch_id} no encontrado`);
-      }
-      ticketEntity.lunch = lunchEntity;
-    });*/
-
     return ticketEntity;
   }
 
   // Buscar por id y devolver ORM
-  async findByIdORM(id: string): Promise<TicketEntity | null> {
-    return this.ticketRepository.findOne({ where: { id }, relations: ['user', 'lunch'] });
+  async findORM(id: string): Promise<TicketEntity | null> {
+    return this.repository.findOne({
+      where: { id },
+      relations: ['user', 'lunch']
+   });
   }
 
   // Buscar por id
-  async findById(id: string): Promise<Ticket | null> {
-    return this.ticketRepository.findOne({ where: { id }, relations: ['user', 'lunch'] })
-      .then(ticketEntity => ticketEntity ? this.mapToDomain(ticketEntity) : null);
+  async find(id: string): Promise<Ticket | null> {
+    const entity = await this.findORM(id);
+    return entity ? this.mapToDomain(entity) : null;
   }
 
   // Buscar todos
   async findAll(): Promise<Ticket[]> {
-    const ticketEntities = await this.ticketRepository.find({ relations: ['user', 'lunch'] });
-    return ticketEntities.map(entity => this.mapToDomain(entity))
+    const entities = await this.repository.find({
+      relations: ['user', 'lunch']
+    });
+    return entities.map(entity => this.mapToDomain(entity));
   }
 
   // Guardar
-  async save(ticket: Ticket): Promise<Ticket> {
-    const ticketEntity = await this.mapToORM(ticket, ticket.user_email, ticket.lunch_id);
-    const savedEntity = await this.ticketRepository.save(ticketEntity);
+  async create(ticket: Ticket): Promise<Ticket> {
+    const entity = await this.mapToORM(ticket, ticket.user_email, ticket.lunch_id);
+    const savedEntity = await this.repository.save(entity);
     return this.mapToDomain(savedEntity);
   }
 
   // Actualizar
   async update(ticket: Ticket) {
-    const ticketEntity = await this.mapToORM(ticket, ticket.user_email, ticket.lunch_id);
-    const savedEntity = await this.ticketRepository.update(ticketEntity.id, ticketEntity);
-    //return this.mapToDomain(savedEntity);
+    const entity = await this.mapToORM(ticket, ticket.user_email, ticket.lunch_id);
+    await this.repository.update(entity.id, entity);
   }
 
   // Borrar por id
-  async delete(id: string): Promise<void> {
-    return this.ticketRepository.delete(id).then(() => {});
+  async delete(id: string) {
+    await this.repository.delete(id);
   }
 
   // Marcar como usado
   async markAsUsed(id: string): Promise<boolean> {
-    const ticketEntity = await this.findByIdORM(id);
+    const ticketEntity = await this.findORM(id);
     if (!ticketEntity) {
       throw new Error(`Ticket con id ${id} no encontrado`);
     }
     ticketEntity.state = TicketState.USED;
     ticketEntity.used_at = new Date();
-    const savedEntity = await this.ticketRepository.update({ id: ticketEntity.id } , ticketEntity);
+    const savedEntity = await this.repository.update({ id: ticketEntity.id } , ticketEntity);
 
     return savedEntity.affected === 1;
-    //return this.mapToDomain(savedEntity);
   }
-  async findTicketsByUser(email: string): Promise<Ticket[]> {
-    const ticketEntities = await this.ticketRepository.find({ where: { user: { email } }, relations: ['user', 'lunch'] });
-    return ticketEntities.map(entity => this.mapToDomain(entity));
+  async findByUser(email: string): Promise<Ticket[]> {
+    const entities = await this.repository.find({ where: { user: { email } }, relations: ['user', 'lunch'] });
+    return entities.map(entity => this.mapToDomain(entity));
   }
 
 }

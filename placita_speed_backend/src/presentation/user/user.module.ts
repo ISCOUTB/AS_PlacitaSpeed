@@ -7,19 +7,19 @@ import { TicketTypeormRepository } from '@infrastructure/typeorm/ticket/ticket-t
 import { UserTypeormRepository } from '@infrastructure/typeorm/user/user-typeorm.repository';
 import { Module } from '@nestjs/common';
 import { UserController } from './user.controller';
-import { AutenticateUserService } from '@application/user/autenticate-user.service';
-import { ConsultUserDataService } from '@application/user/consult-user-data.service';
-import { CreateUserService } from '@application/user/create-user.service';
-import { LogoutUserService } from '@application/user/logout-user.service';
+import { AutenticateUser } from '@application/user/autenticate-user.service';
+import { ConsultUserData } from '@application/user/consult-user-data.service';
+import { CreateUser } from '@application/user/create-user.service';
+import { LogoutUser } from '@application/user/logout-user.service';
 import { LunchTypeormRepository } from '@infrastructure/typeorm/lunch/lunch-typeorm.repository';
 
 @Module({
   controllers: [ UserController],
   providers: [
-    AutenticateUserService,
-    ConsultUserDataService,
-    CreateUserService,
-    LogoutUserService,
+    AutenticateUser,
+    ConsultUserData,
+    CreateUser,
+    LogoutUser,
     UserTypeormRepository,
     LunchTypeormRepository,
     BcryptJwtAuthAdapter,

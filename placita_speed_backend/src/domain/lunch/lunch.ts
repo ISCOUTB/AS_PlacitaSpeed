@@ -1,7 +1,5 @@
-export class Lunch {
-    id!: number;
-    name!: string;
+import { Drink } from "../drink/drink";
+
+export class Lunch extends Drink {
     description!: string;
-    virtual_price!: number;
-    stock!: number;
 }

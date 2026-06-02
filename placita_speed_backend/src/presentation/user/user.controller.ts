@@ -3,7 +3,6 @@ import {
   Post,
   Get,
   Body,
-  Param,
   UseGuards,
   Request,
   HttpCode,
@@ -12,19 +11,19 @@ import {
 } from '@nestjs/common';
 import { JwtGuard } from '../jwt.guard';
 import { LoginDto, RegisterDto } from '../DTOs/user.dto';
-import { AutenticateUserService } from '@application/user/autenticate-user.service';
-import { ConsultUserDataService } from '@application/user/consult-user-data.service';
-import { CreateUserService } from '@application/user/create-user.service';
-import { LogoutUserService } from '@application/user/logout-user.service';
+import { AutenticateUser } from '@application/user/autenticate-user.service';
+import { ConsultUserData } from '@application/user/consult-user-data.service';
+import { CreateUser } from '@application/user/create-user.service';
+import { LogoutUser } from '@application/user/logout-user.service';
 
 
 @Controller('api/users')
 export class UserController {
   constructor(
-    private readonly autenticate: AutenticateUserService,
-    private readonly consultData: ConsultUserDataService,
-    private readonly create: CreateUserService,
-    private readonly logout: LogoutUserService,
+    private readonly autenticate: AutenticateUser,
+    private readonly consultData: ConsultUserData,
+    private readonly create: CreateUser,
+    private readonly logout: LogoutUser,
   ) {}
 
   private sanitizeUser(user: any) {

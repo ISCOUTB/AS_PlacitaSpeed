@@ -11,14 +11,14 @@ import {
 } from '@nestjs/common';
 import { JwtGuard } from '../jwt.guard';
 import { BuyCreditsDto } from '../DTOs/recharge.dto';
-import { BuyCreditsService } from '@application/recharge/buy-credits.service';
-import { ConsultRechargesByUserService } from '@application/recharge/consult-recharges-by-user.service';
+import { BuyCredits } from '@application/recharge/buy-credits.service';
+import { ConsultRechargesByUser } from '@application/recharge/consult-recharges-by-user.service';
 
 @Controller('api/recharges')
 export class RechargeController {
   constructor(
-    private readonly buyCredits: BuyCreditsService,
-    private readonly consultRechargesByUser: ConsultRechargesByUserService
+    private readonly buyCredits: BuyCredits,
+    private readonly consultRechargesByUser: ConsultRechargesByUser
   ) {}
 
   /**

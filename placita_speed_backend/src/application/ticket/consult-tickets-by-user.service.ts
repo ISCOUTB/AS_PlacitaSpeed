@@ -5,7 +5,7 @@ import { UserRepositoryPort } from '@domain/user/user-repository.port';
 import { LunchRepositoryPort } from '@domain/lunch/lunch-repository.port';
 
 @Injectable()
-export class ConsultTicketsByUserService {
+export class ConsultTicketsByUser {
   constructor(
     private readonly ticketRepository: TicketRepositoryPort,
     private readonly userRepository: UserRepositoryPort,
@@ -13,12 +13,12 @@ export class ConsultTicketsByUserService {
   ) {}
 
   async execute(email: string): Promise<any[]> {
-    const tickets = await this.ticketRepository.findTicketsByUser(email);
+    const tickets = await this.ticketRepository.findByUser(email);
     return Promise.all(tickets.map((ticket) => this.buildTicketResponse(ticket)));
   }
 
   async executeById(ticketId: string): Promise<any> {
-    const ticket = await this.ticketRepository.findById(ticketId);
+    const ticket = await this.ticketRepository.find(ticketId);
     if (!ticket) {
       throw new Error('Ticket no encontrado');
     }
@@ -28,8 +28,8 @@ export class ConsultTicketsByUserService {
 
   private async buildTicketResponse(ticket: Ticket): Promise<any> {
     const [user, lunch] = await Promise.all([
-      this.userRepository.findByEmail(ticket.user_email),
-      this.lunchRepository.findById(ticket.lunch_id),
+      this.userRepository.find(ticket.user_email),
+      this.lunchRepository.find(ticket.lunch_id),
     ]);
 
     if (!user) {

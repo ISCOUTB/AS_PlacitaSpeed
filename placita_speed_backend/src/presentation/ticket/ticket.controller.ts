@@ -12,18 +12,18 @@ import {
 } from '@nestjs/common';
 import { JwtGuard } from '../jwt.guard';
 import { CreateTicketDto, ValidateTicketDto } from '../DTOs/ticket.dto';
-import { ConsultAllTicketsService } from '@application/ticket/consult-all-tickets.service';
-import { ConsultTicketsByUserService } from '@application/ticket/consult-tickets-by-user.service';
-import { CreateTicketService } from '@application/ticket/create-ticket.service';
-import { ValidateTicketService } from '@application/ticket/validate-ticket.service';
+import { ConsultAllTickets } from '@application/ticket/consult-all-tickets.service';
+import { ConsultTicketsByUser } from '@application/ticket/consult-tickets-by-user.service';
+import { CreateTicket } from '@application/ticket/create-ticket.service';
+import { ValidateTicket } from '@application/ticket/validate-ticket.service';
 
 @Controller('api/tickets')
 export class TicketController {
   constructor(
-    private readonly consultAllTickets: ConsultAllTicketsService,
-    private readonly consultTicketsByUser: ConsultTicketsByUserService,
-    private readonly createTicketService: CreateTicketService,
-    private readonly validateTicketSe: ValidateTicketService
+    private readonly consultAllTickets: ConsultAllTickets,
+    private readonly consultTicketsByUser: ConsultTicketsByUser,
+    private readonly createTicket: CreateTicket,
+    private readonly validateTicketSe: ValidateTicket
   ) {}
 
   /**
@@ -79,7 +79,7 @@ export class TicketController {
   @HttpCode(HttpStatus.CREATED)
   async buyTicket(@Request() req, @Body() body: CreateTicketDto) {
     try {
-      return await this.createTicketService.execute(req.user.email, body.lunch_id);
+      return await this.createTicket.execute(req.user.email, body.lunch_id);
     } catch (e: any) {
       throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
     }

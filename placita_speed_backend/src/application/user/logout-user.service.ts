@@ -12,11 +12,11 @@ import { Injectable } from '@nestjs/common';
 import { UserRepositoryPort } from '../../domain/user/user-repository.port';
 
 @Injectable()
-export class LogoutUserService {
+export class LogoutUser {
   constructor(private readonly userRepository: UserRepositoryPort) {}
 
   async execute(email: string): Promise<{ message: string }> {
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.find(email);
     if (!user) {
       throw new Error('Usuario no encontrado');
     }

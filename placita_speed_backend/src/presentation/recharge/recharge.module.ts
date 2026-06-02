@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { BuyCreditsService } from '@application/recharge/buy-credits.service';
-import { ConsultRechargesByUserService } from '@application/recharge/consult-recharges-by-user.service';
+import { BuyCredits } from '@application/recharge/buy-credits.service';
+import { ConsultRechargesByUser } from '@application/recharge/consult-recharges-by-user.service';
 import { RechargeController } from './recharge.controller';
 
 import { RechargeRepositoryPort } from '@domain/recharge/recharge-repository.port';
@@ -13,8 +13,8 @@ import { BcryptJwtAuthAdapter } from '@infrastructure/auth/bcrypt-jwt-auth.adapt
 @Module({
   controllers: [RechargeController],
   providers: [
-    BuyCreditsService,
-    ConsultRechargesByUserService,
+    BuyCredits,
+    ConsultRechargesByUser,
     UserTypeormRepository,
     RechargeTypeormRepository,
     BcryptJwtAuthAdapter,

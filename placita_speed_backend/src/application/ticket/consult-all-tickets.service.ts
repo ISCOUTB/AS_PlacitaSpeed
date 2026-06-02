@@ -6,7 +6,7 @@ import { UserRepositoryPort } from '@domain/user/user-repository.port';
 import { LunchRepositoryPort } from '@domain/lunch/lunch-repository.port';
 
 @Injectable()
-export class ConsultAllTicketsService {
+export class ConsultAllTickets {
   constructor(
     private readonly ticketRepository: TicketRepositoryPort,
     private readonly userRepository: UserRepositoryPort,
@@ -14,7 +14,7 @@ export class ConsultAllTicketsService {
   ) {}
 
   async execute(adminEmail: string): Promise<any[]> {
-    const admin: User | null = await this.userRepository.findByEmail(adminEmail);
+    const admin: User | null = await this.userRepository.find(adminEmail);
     if (!admin) {
       throw new Error('Usuario no encontrado');
     }
@@ -27,8 +27,8 @@ export class ConsultAllTicketsService {
 
   private async buildTicketResponse(ticket: Ticket): Promise<any> {
     const [user, lunch] = await Promise.all([
-      this.userRepository.findByEmail(ticket.user_email),
-      this.lunchRepository.findById(ticket.lunch_id),
+      this.userRepository.find(ticket.user_email),
+      this.lunchRepository.find(ticket.lunch_id),
     ]);
 
     if (!user) throw new Error('Usuario no encontrado');

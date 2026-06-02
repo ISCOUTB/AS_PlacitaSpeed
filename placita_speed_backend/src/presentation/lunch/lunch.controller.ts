@@ -4,11 +4,11 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { ConsultLunchesService } from '@application/lunch/consult-lunches.service';
+import { ConsultLunches } from '@application/lunch/consult-lunches.service';
 
 @Controller('api/lunches')
 export class LunchController {
-  constructor(private readonly consultLunches: ConsultLunchesService) {}
+  constructor(private readonly consultLunches: ConsultLunches) {}
 
   @Get()
   async getLunches() {

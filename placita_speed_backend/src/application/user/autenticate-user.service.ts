@@ -3,7 +3,7 @@ import { UserRepositoryPort } from '@domain/user/user-repository.port';
 import { AuthPort } from '@domain/user/auth.port';
 
 @Injectable()
-export class AutenticateUserService {
+export class AutenticateUser {
   constructor(
     private readonly userRepository: UserRepositoryPort,
     private readonly auth: AuthPort,
@@ -13,7 +13,7 @@ export class AutenticateUserService {
    * Valida email y contraseña, actualiza last_access y retorna un JWT.
    */
   async execute(email: string, password: string): Promise<string> {
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.find(email);
     if (!user) {
       throw new Error('Credenciales inválidas');
     }
@@ -26,7 +26,7 @@ export class AutenticateUserService {
       throw new Error('Credenciales inválidas');
     }
 
-    await this.userRepository.updateLastAccess(email);
+    this.userRepository.updateLastAccess(email);
 
     const token = this.auth.generateToken({ email: user.email, role: user.role });
     return token;

@@ -4,7 +4,7 @@ import { RechargeRepositoryPort } from '@domain/recharge/recharge-repository.por
 import { UserRepositoryPort } from '@domain/user/user-repository.port';
 
 @Injectable()
-export class BuyCreditsService {
+export class BuyCredits {
   constructor(
     private readonly rechargeRepository: RechargeRepositoryPort,
     private readonly userRepository: UserRepositoryPort,
@@ -19,14 +19,14 @@ export class BuyCreditsService {
       throw new Error('El monto de recarga debe ser mayor a 0');
     }
 
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.find(email);
     if (!user) {
       throw new Error('Usuario no encontrado');
     }
 
     // Sumar al saldo
     user.virtual_balance += amount;
-    await this.userRepository.update(user);
+    this.userRepository.update(user);
 
     // Registrar la recarga como exitosa
     const recharge = new Recharge();
@@ -36,6 +36,6 @@ export class BuyCreditsService {
     recharge.ended_at = new Date();
     recharge.user_email = email;
 
-    return this.rechargeRepository.save(recharge);
+    return this.rechargeRepository.create(recharge);
   }
 }

@@ -4,14 +4,14 @@ import { UserRepositoryPort } from '@domain/user/user-repository.port';
 import { AuthPort } from '@domain/user/auth.port';
 
 @Injectable()
-export class CreateUserService {
+export class CreateUser {
   constructor(
     private readonly userRepository: UserRepositoryPort,
     private readonly auth: AuthPort
   ) {}
 
   async execute(email: string, password: string, role: UserRole): Promise<User> {
-    const existing = await this.userRepository.findByEmail(email);
+    const existing = await this.userRepository.find(email);
     if (existing) {
       throw new Error('El usuario ya existe');
     }
@@ -25,6 +25,6 @@ export class CreateUserService {
     newUser.created_at = new Date();
     newUser.last_access = new Date();
 
-    return this.userRepository.save(newUser);
+    return this.userRepository.create(newUser);
   }
 }

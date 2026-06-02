@@ -7,7 +7,7 @@ import { TicketRepositoryPort } from '@domain/ticket/ticket-repository.port';
 import { UserRepositoryPort } from '@domain/user/user-repository.port';
 
 @Injectable()
-export class CreateTicketService {
+export class CreateTicket {
   constructor(
     private readonly ticketRepository: TicketRepositoryPort,
     private readonly lunchRepository: LunchRepositoryPort,
@@ -16,7 +16,7 @@ export class CreateTicketService {
 
   async execute(email: string, lunchId: number): Promise<any> {
     // Obtener almuerzo y validar existencia
-    const lunch = await this.lunchRepository.findById(lunchId);
+    const lunch = await this.lunchRepository.find(lunchId);
     if (!lunch) {
       throw new Error('Almuerzo no encontrado');
     }
@@ -26,7 +26,7 @@ export class CreateTicketService {
     }
 
     // Obtener usuario y validar saldo
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.find(email);
     if (!user) {
       throw new Error('Usuario no encontrado');
     }
@@ -39,11 +39,11 @@ export class CreateTicketService {
 
     // Descontar saldo
     user.virtual_balance -= lunch.virtual_price;
-    await this.userRepository.update(user);
+    this.userRepository.update(user);
 
     // Reducir stock
     lunch.stock -= 1;
-    await this.lunchRepository.update(lunch);
+    this.lunchRepository.update(lunch);
 
     // Crear ticket
     const ticket = new Ticket();
@@ -53,7 +53,7 @@ export class CreateTicketService {
     ticket.user_email = email;
     ticket.lunch_id = lunchId;
 
-    const savedTicket = await this.ticketRepository.save(ticket);
+    const savedTicket = await this.ticketRepository.create(ticket);
     return this.buildTicketResponse(savedTicket, user, lunch);
   }
 

@@ -7,11 +7,11 @@ import { LunchRepositoryPort } from '@domain/lunch/lunch-repository.port';
 
 @Injectable()
 export class LunchTypeormRepository extends LunchRepositoryPort {
-  private lunchRepository: Repository<LunchEntity>;
+  private repository: Repository<LunchEntity>;
 
   constructor(private dataSource: DataSource) {
     super();
-    this.lunchRepository = this.dataSource.getRepository(LunchEntity);
+    this.repository = this.dataSource.getRepository(LunchEntity);
   }
 
   // Convertir clase de Entidad a clase de Dominio
@@ -36,67 +36,52 @@ export class LunchTypeormRepository extends LunchRepositoryPort {
     return lunchEntity;
   }
 
-  // Buscar un almuerzo por ID y devolver la entidad TypeORM
-  async findByIdORM(id: number): Promise<LunchEntity | null> {
-    const lunchEntity = await this.lunchRepository.findOne({
+  // Buscar por ID y devolver la entidad TypeORM
+  async findORM(id: number): Promise<LunchEntity | null> {
+    return await this.repository.findOne({
       where: { id }
     });
-
-    if (!lunchEntity) {
-      return null;
-    }
-
-    return lunchEntity;
   }
 
-  // Buscar un almuerzo por ID y devolver la entidad de dominio
-  async findById(id: number): Promise<Lunch | null> {
-    const lunchEntity = await this.lunchRepository.findOne({
-      where: { id },
-    });
-
-    if (!lunchEntity) {
-      return null;
-    }
-
-    return this.mapToDomain(lunchEntity);
+  // Buscar por ID y devolver la entidad de dominio
+  async find(id: number): Promise<Lunch | null> {
+    const entity = await this.findORM(id);
+    return entity ? this.mapToDomain(entity) : null;
   }
 
-  // Buscar todos los almuerzos
+  // Buscar todos
   async findAll(): Promise<Lunch[]> {
-    const lunchEntities = await this.lunchRepository.find();
+    const entities = await this.repository.find();
+    return entities.map(entity => this.mapToDomain(entity));
+  }
 
-    // Convertir a lista
-    return lunchEntities.map(entity => this.mapToDomain(entity));
+  // Crear nuevo
+  async create(lunch: Lunch): Promise<Lunch> {
+    const entity = this.mapToORM(lunch);
+    const savedEntity = await this.repository.save(entity);
+    return this.mapToDomain(savedEntity);
+  }
+
+  // Actualizar existente
+  async update(lunch: Lunch) {
+    const entity = this.mapToORM(lunch);
+    await this.repository.update({ id: lunch.id }, entity);
+    //return this.mapToDomain(updatedEntity);
+  }
+
+  // Borrar
+  async delete(id: number) {
+    await this.repository.delete({ id });
   }
 
   // Buscar almuerzos disponibles (stock > 0)
   async findAvailable(): Promise<Lunch[]> {
-    const lunchEntities = await this.lunchRepository.find({
+    const entities = await this.repository.find({
       where: {
         stock: MoreThan(0)
       },
     });
 
-    return lunchEntities.map(entity => this.mapToDomain(entity));
-  }
-
-  // Guardar un nuevo almuerzo
-  async save(lunch: Lunch): Promise<Lunch> {
-    const lunchEntity = this.mapToORM(lunch);
-    const savedEntity = await this.lunchRepository.save(lunchEntity);
-    return this.mapToDomain(savedEntity);
-  }
-
-  // Actualizar un almuerzo existente
-  async update(lunch: Lunch) {
-    const lunchEntity = this.mapToORM(lunch);
-    await this.lunchRepository.update({ id: lunch.id }, lunchEntity);
-    //return this.mapToDomain(updatedEntity);
-  }
-
-  // Borrar un almuerzo por ID
-  async delete(id: number) {
-    await this.lunchRepository.delete({ id });
+    return entities.map(entity => this.mapToDomain(entity));
   }
 }

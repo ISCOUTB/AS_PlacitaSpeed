@@ -5,19 +5,18 @@ import { Recharge } from '@domain/recharge/recharge';
 import { RechargeEntity } from '../recharge/recharge.entity';
 import { RechargeRepositoryPort } from '@domain/recharge/recharge-repository.port';
 
-import { UserEntity } from '../user/user.entity';
 import { UserTypeormRepository } from '../user/user-typeorm.repository';
 
 @Injectable()
 export class RechargeTypeormRepository extends RechargeRepositoryPort {
-  private rechargeRepository: Repository<RechargeEntity>;
+  private repository: Repository<RechargeEntity>;
 
   constructor(
     private dataSource: DataSource,
     private userRepository: UserTypeormRepository
   ) {
     super();
-    this.rechargeRepository = this.dataSource.getRepository(RechargeEntity);
+    this.repository = this.dataSource.getRepository(RechargeEntity);
   }
 
   mapToDomain(rechargeEntity: RechargeEntity): Recharge {
@@ -39,61 +38,57 @@ export class RechargeTypeormRepository extends RechargeRepositoryPort {
     rechargeEntity.started_at = recharge.started_at;
     rechargeEntity.ended_at = recharge.ended_at || undefined;
     
-    let userEntity = await this.userRepository.findByEmailORM(user_email)
+    let userEntity = await this.userRepository.findORM(user_email)
     if (!userEntity) {
       throw new Error(`Usuario con email ${user_email} no encontrado`);
     }
     rechargeEntity.user = userEntity;
-
-    /*
-    const promise = this.userRepository.findByEmailORM(user_email);
-    promise.then(userEntity => {
-      if (!userEntity) {
-        throw new Error(`Usuario con email ${user_email} no encontrado`);
-      }
-      rechargeEntity.user = userEntity; 
-    });*/
-
     return rechargeEntity;
   }
 
+  // Buscar por ID y devolver la entidad TypeORM
+    async findORM(id: string): Promise<RechargeEntity | null> {
+      return await this.repository.findOne({
+        where: { id }
+      });
+    }
+
   // Buscar por id
-  async findById(id: string): Promise<Recharge | null> {
-    return this.rechargeRepository.findOne({ where: { id }, relations: ['user'] })
-      .then(rechargeEntity => rechargeEntity ? this.mapToDomain(rechargeEntity) : null);
+  async find(id: string): Promise<Recharge | null> {
+    const entity = await this.findORM(id);
+    return entity ? this.mapToDomain(entity) : null;
   }
 
   // Buscar todos
   async findAll(): Promise<Recharge[]> {
-    const rechargeEntities = await this.rechargeRepository.find({ relations: ['user'] });
-    return rechargeEntities.map(entity => this.mapToDomain(entity));
+    const entities = await this.repository.find();
+    return entities.map(entity => this.mapToDomain(entity));
   }
 
   // Guardar
-  async save(recharge: Recharge): Promise<Recharge> {
-    const rechargeEntity = await this.mapToORM(recharge, recharge.user_email);
-    const savedEntity = await this.rechargeRepository.save(rechargeEntity);
+  async create(recharge: Recharge): Promise<Recharge> {
+    const entity = await this.mapToORM(recharge, recharge.user_email);
+    const savedEntity = await this.repository.save(entity);
     return this.mapToDomain(savedEntity);
   }
 
   // Actualizar
   async update(recharge: Recharge) {
-    const rechargeEntity = await this.mapToORM(recharge, recharge.user_email);
-    const savedEntity = await this.rechargeRepository.update({ id: recharge.id }, rechargeEntity);
-    //return this.mapToDomain(savedEntity);
+    const entity = await this.mapToORM(recharge, recharge.user_email);
+    await this.repository.update({ id: recharge.id }, entity);
   }
 
   // Borrar por id
   async delete(id: string) {
-    await this.rechargeRepository.delete(id);
+    await this.repository.delete(id);
   }
 
-  async findRechargesByUser(email: string): Promise<Recharge[]> {
-    const rechargeEntities = await this.rechargeRepository.find({
+  async findByUser(email: string): Promise<Recharge[]> {
+    const entities = await this.repository.find({
       where: { user: { email } },
       relations: ['user']
     });
-    return rechargeEntities.map(entity => this.mapToDomain(entity));
+    return entities.map(entity => this.mapToDomain(entity));
   }
 
 }

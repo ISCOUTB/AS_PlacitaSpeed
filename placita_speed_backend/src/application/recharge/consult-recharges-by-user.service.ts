@@ -3,10 +3,10 @@ import { Recharge } from '@domain/recharge/recharge';
 import { RechargeRepositoryPort } from '@domain/recharge/recharge-repository.port';
 
 @Injectable()
-export class ConsultRechargesByUserService {
+export class ConsultRechargesByUser {
   constructor(private readonly rechargeRepository: RechargeRepositoryPort) {}
 
   async execute(email: string): Promise<Recharge[]> {
-    return this.rechargeRepository.findRechargesByUser(email);
+    return this.rechargeRepository.findByUser(email);
   }
 }
